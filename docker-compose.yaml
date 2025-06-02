@@ -1,0 +1,20 @@
+services:
+  backend-server:
+    build:
+      context: .
+      dockerfile: ./build/docker/Dockerfile.server
+    environment:
+      - "SERVER_OPENFEATURE_PROVIDER_URL=http://openfeature-server:1031"
+      - "SERVER_PORT=8080"
+      - "SERVER_REQUEST_TIMEOUT=30"
+      - "SERVER_SHUTDOWN_TIMEOUT=10"
+    ports:
+      - 8080:8080
+    depends_on:
+      - openfeature-server
+    links:
+      - openfeature-server
+  openfeature-server:
+    image: gofeatureflag/go-feature-flag:latest
+    volumes:
+      - ./configs:/goff
