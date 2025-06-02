@@ -22,13 +22,17 @@ jobs:
         continue-on-error: true
       - name: Test with the Go CLI
         id: test
-        run: go test
+        run: go test ./...
         continue-on-error: true
       - name: report
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         if: github.event_name == 'pull_request'
+        env:
+          BUILD_RESULT: ${{ steps.build.outputs.stdout }}
+          TEST_RESULT: ${{ steps.test.outputs.stdout }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
           script: |
             // 1. Retrieve existing bot comments for the PR
             const { data: comments } = await github.rest.issues.listComments({
@@ -46,16 +50,17 @@ jobs:
             <details><summary>Build result</summary>
 
             \`\`\`\n
-            ${{ steps.build.outputs.stdout }}
+            ${process.env.BUILD_RESULT}
             \`\`\`
 
             </details>
+
             #### Go Test Outcome 🧪\`${{ steps.test.outcome }}\`
 
             <details><summary>Show Plan</summary>
 
             \`\`\`\n
-            ${{ steps.test.outputs.stdout }}
+            ${process.env.TEST_RESULT}
             \`\`\`
 
             </details>
