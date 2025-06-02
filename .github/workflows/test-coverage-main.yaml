@@ -15,7 +15,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: "1.24.x"
+          go-version-file: go.mod
       - name: Install dependencies
         run: go mod vendor
       - name: Build
