@@ -13,72 +13,12 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24.x"
+          go-version-file: go.mod
       - name: Install dependencies
         run: go mod vendor
       - name: Build
         id: build
         run: go build -v -a -installsuffix cgo -o runtime_binary ./cmd/server
-      - name: Test with the Go CLI
+      - name: Test
+        uses: robherley/go-test-action@v0
         if: always()
-        id: test
-        run: go test ./...
-      - name: report
-        uses: actions/github-script@v7
-        if: always()
-        env:
-          BUILD_RESULT: ${{ steps.build.outputs.stdout }}
-          TEST_RESULT: ${{ steps.test.outputs.stdout }}
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-          script: |
-            // 1. Retrieve existing bot comments for the PR
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            })
-            const botComment = comments.find(comment => {
-              return comment.user.type === 'Bot' && comment.body.includes('Golang Build & Test status')
-            })
-
-            // 2. Prepare format of the comment
-            const output = `## Golang Build & Test status 🚀
-            #### Go Build Outcome 🔨\`${{ steps.build.outcome }}\`
-            <details><summary>Build result</summary>
-
-            \`\`\`\n
-            ${{steps.build.outputs.result}}
-            \`\`\`
-
-            </details>
-
-            #### Go Test Outcome 🧪\`${{ steps.test.outcome }}\`
-
-            <details><summary>Show Plan</summary>
-
-            \`\`\`\n
-            ${{steps.test.outputs.result}}
-            \`\`\`
-
-            </details>
-
-            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
-
-            // 3. If we have a comment, update it, otherwise create a new one
-            if (botComment) {
-              github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: botComment.id,
-                body: output
-              })
-            } else {
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: output
-              })
-            }
