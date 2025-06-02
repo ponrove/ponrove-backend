@@ -19,14 +19,13 @@ jobs:
       - name: Build
         id: build
         run: go build -v -a -installsuffix cgo -o runtime_binary ./cmd/server
-        continue-on-error: true
       - name: Test with the Go CLI
+        if: always()
         id: test
         run: go test ./...
-        continue-on-error: true
       - name: report
         uses: actions/github-script@v7
-        if: github.event_name == 'pull_request'
+        if: always()
         env:
           BUILD_RESULT: ${{ steps.build.outputs.stdout }}
           TEST_RESULT: ${{ steps.test.outputs.stdout }}
@@ -41,16 +40,16 @@ jobs:
               issue_number: context.issue.number,
             })
             const botComment = comments.find(comment => {
-              return comment.user.type === 'Bot' && comment.body.includes('OpenTofu Format and Style')
+              return comment.user.type === 'Bot' && comment.body.includes('Golang Build & Test status')
             })
 
             // 2. Prepare format of the comment
-            const output = `## CI Status 🚀
+            const output = `## Golang Build & Test status 🚀
             #### Go Build Outcome 🔨\`${{ steps.build.outcome }}\`
             <details><summary>Build result</summary>
 
             \`\`\`\n
-            ${process.env.BUILD_RESULT}
+            ${{steps.build.outputs.result}}
             \`\`\`
 
             </details>
@@ -60,7 +59,7 @@ jobs:
             <details><summary>Show Plan</summary>
 
             \`\`\`\n
-            ${process.env.TEST_RESULT}
+            ${{steps.test.outputs.result}}
             \`\`\`
 
             </details>
