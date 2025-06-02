@@ -8,6 +8,7 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
 	"github.com/open-feature/go-sdk/openfeature"
+	"github.com/ponrove/ponrove-backend/internal/pkg/configuration"
 )
 
 const (
@@ -17,21 +18,23 @@ const (
 
 type api struct {
 	openfeatureClient *openfeature.Client
+	config            configuration.ServerConfig
 }
 
 // NewAPI creates a new instance of the Organisations API with the provided OpenFeature client for configuration and
 // feature flag evaluation.
-func NewAPI(openfeatureClient *openfeature.Client) *api {
+func NewAPI(openfeatureClient *openfeature.Client, cfg configuration.ServerConfig) *api {
 	return &api{
 		openfeatureClient: openfeatureClient,
+		config:            cfg,
 	}
 }
 
 // NewAPIHandler creates a new HTTP handler for the Organisations API using the provided OpenFeature client.
-func NewAPIHandler(openfeatureClient *openfeature.Client) http.Handler {
+func NewAPIHandler(openfeatureClient *openfeature.Client, cfg configuration.ServerConfig) http.Handler {
 	r := chi.NewRouter()
 	api := humachi.New(r, huma.DefaultConfig(APIName, APIVersion))
-	huma.AutoRegister(api, NewAPI(openfeatureClient))
+	huma.AutoRegister(api, NewAPI(openfeatureClient, cfg))
 
 	return r
 }
@@ -47,6 +50,7 @@ type (
 	}
 )
 
+// Bootstrap endpoint for foundational logic, this will become obsolete.
 func (a *api) RegisterRootEndpoint(api huma.API) {
 	huma.Register(api, huma.Operation{
 		OperationID: "OrganisationsRoot",
@@ -54,7 +58,7 @@ func (a *api) RegisterRootEndpoint(api huma.API) {
 		Path:        "/",
 		Tags:        []string{"Organisations"},
 	}, func(ctx context.Context, i *RootEndpointRequest) (*RootEndpointResponse, error) {
-		testflag, err := a.openfeatureClient.BooleanValue(ctx, "test-flag", false, openfeature.EvaluationContext{})
+		testflag, err := a.openfeatureClient.BooleanValue(ctx, "test-flag", a.config.OrganisationsApiTestFlag, openfeature.EvaluationContext{})
 		if err != nil {
 			return nil, err
 		}

@@ -9,27 +9,22 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/danielgtaylor/huma/v2"
-	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/rs/zerolog/log"
 
-	"github.com/go-chi/chi/v5"
 	gofeatureflag "github.com/open-feature/go-sdk-contrib/providers/go-feature-flag/pkg"
 	"github.com/open-feature/go-sdk/openfeature"
 	"github.com/ponrove/ponrove-backend/internal/pkg/configuration"
-	"github.com/ponrove/ponrove-backend/internal/pkg/middleware"
-	"github.com/ponrove/ponrove-backend/pkg/api/ingestion"
-	"github.com/ponrove/ponrove-backend/pkg/api/organisations"
-	"github.com/ponrove/ponrove-backend/pkg/api/users"
+	"github.com/ponrove/ponrove-backend/internal/pkg/mux"
 )
 
 func main() {
 	var err error
+	cfg := configuration.New()
 	openfeature.SetProvider(openfeature.NoopProvider{})
-	if configuration.ServerConfig().OpenFeatureProviderURL != "" {
+	if cfg.ServerOpenFeatureProviderURL != "" {
 		provider, err := gofeatureflag.NewProvider(
 			gofeatureflag.ProviderOptions{
-				Endpoint: configuration.ServerConfig().OpenFeatureProviderURL,
+				Endpoint: cfg.ServerOpenFeatureProviderURL,
 			},
 		)
 		if err != nil {
@@ -47,12 +42,12 @@ func main() {
 	defer stop()
 
 	srv := http.Server{
-		Addr: fmt.Sprintf(":%d", configuration.ServerConfig().Port),
+		Addr: fmt.Sprintf(":%d", cfg.ServerPort),
 		// Use the context that includes a notify channel for graceful shutdown.
 		BaseContext:  func(_ net.Listener) context.Context { return serverCtx },
 		ReadTimeout:  time.Second,
-		WriteTimeout: time.Duration(configuration.ServerConfig().RequestTimeout) * time.Second,
-		Handler:      createMux(),
+		WriteTimeout: time.Duration(cfg.ServerRequestTimeout) * time.Second,
+		Handler:      mux.New(cfg),
 	}
 
 	srvErr := make(chan error, 1)
@@ -73,7 +68,7 @@ func main() {
 		stop()
 	}
 
-	shutdownCtx, shutdownStop := context.WithTimeout(context.Background(), time.Duration(configuration.ServerConfig().ShutdownTimeout)*time.Second)
+	shutdownCtx, shutdownStop := context.WithTimeout(context.Background(), time.Duration(cfg.ServerShutdownTimeout)*time.Second)
 	defer shutdownStop()
 	go func() {
 		<-shutdownCtx.Done()
@@ -88,32 +83,4 @@ func main() {
 	} else {
 		log.Info().Msg("Server shutdown gracefully")
 	}
-}
-
-// createMux initializes the HTTP router and registers all API endpoints.
-func createMux() http.Handler {
-	r := chi.NewRouter()
-
-	r.Use(
-		// Middleware to log requests and responses.
-		middleware.LogRequest,
-	)
-
-	api := humachi.New(r, huma.DefaultConfig("Ponrove Backend API", "1.0.0"))
-
-	openfeatureClient := openfeature.NewClient("ponrove_backend")
-	openfeature.SetEvaluationContext(openfeature.NewEvaluationContext("general", map[string]any{}))
-
-	// Ingestion API will handle all requests related to data ingestion and processing from clients.
-	huma.AutoRegister(huma.NewGroup(api, "/api/ingestion"), ingestion.NewAPI(openfeatureClient))
-
-	// Organisations API will handle all requests related to organisations, such as creating, updating,
-	// deleting, and retrieving organisation information.
-	huma.AutoRegister(huma.NewGroup(api, "/api/organisations"), organisations.NewAPI(openfeatureClient))
-
-	// Users API will handle all requests related to user management, such as creating, updating,
-	// deleting, and retrieving user information.
-	huma.AutoRegister(huma.NewGroup(api, "/api/users"), users.NewAPI(openfeatureClient))
-
-	return r
 }
