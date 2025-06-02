@@ -14,7 +14,9 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/go-chi/chi/v5"
+	gofeatureflag "github.com/open-feature/go-sdk-contrib/providers/go-feature-flag/pkg"
 	"github.com/open-feature/go-sdk/openfeature"
+	"github.com/ponrove/ponrove-backend/internal/pkg/configuration"
 	"github.com/ponrove/ponrove-backend/internal/pkg/middleware"
 	"github.com/ponrove/ponrove-backend/pkg/api/ingestion"
 	"github.com/ponrove/ponrove-backend/pkg/api/organisations"
@@ -23,7 +25,19 @@ import (
 
 func main() {
 	var err error
-	openfeature.SetProviderAndWait(openfeature.NoopProvider{}) // TODO: Replace with actual OpenFeature provider initialization
+	openfeature.SetProvider(openfeature.NoopProvider{})
+	if configuration.ServerConfig().OpenFeatureProviderURL != "" {
+		provider, err := gofeatureflag.NewProvider(
+			gofeatureflag.ProviderOptions{
+				Endpoint: configuration.ServerConfig().OpenFeatureProviderURL,
+			},
+		)
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to initialize OpenFeature provider")
+		}
+
+		openfeature.SetProviderAndWait(provider)
+	}
 
 	// Add default logger to the context, which all http handlers derive their context (and logger) from.
 	serverCtx := log.Logger.WithContext(context.Background())
@@ -32,13 +46,12 @@ func main() {
 	serverCtx, stop := signal.NotifyContext(serverCtx, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer stop()
 
-	serverOpenFeatureClient := openfeature.NewClient("server")
 	srv := http.Server{
-		Addr: fmt.Sprintf(":%d", serverOpenFeatureClient.Int(context.TODO(), "port", 8080, openfeature.EvaluationContext{})),
+		Addr: fmt.Sprintf(":%d", configuration.ServerConfig().Port),
 		// Use the context that includes a notify channel for graceful shutdown.
 		BaseContext:  func(_ net.Listener) context.Context { return serverCtx },
 		ReadTimeout:  time.Second,
-		WriteTimeout: time.Duration(serverOpenFeatureClient.Int(context.TODO(), "timeout", 10, openfeature.EvaluationContext{})) * time.Second,
+		WriteTimeout: time.Duration(configuration.ServerConfig().RequestTimeout) * time.Second,
 		Handler:      createMux(),
 	}
 
@@ -60,7 +73,7 @@ func main() {
 		stop()
 	}
 
-	shutdownCtx, shutdownStop := context.WithTimeout(context.Background(), time.Duration(serverOpenFeatureClient.Int(context.Background(), "shutdown_timeout", 30, openfeature.EvaluationContext{}))*time.Second)
+	shutdownCtx, shutdownStop := context.WithTimeout(context.Background(), time.Duration(configuration.ServerConfig().ShutdownTimeout)*time.Second)
 	defer shutdownStop()
 	go func() {
 		<-shutdownCtx.Done()
@@ -88,19 +101,19 @@ func createMux() http.Handler {
 
 	api := humachi.New(r, huma.DefaultConfig("Ponrove Backend API", "1.0.0"))
 
+	openfeatureClient := openfeature.NewClient("ponrove_backend")
+	openfeature.SetEvaluationContext(openfeature.NewEvaluationContext("general", map[string]any{}))
+
 	// Ingestion API will handle all requests related to data ingestion and processing from clients.
-	ingestionApiOpenFeatureClient := openfeature.NewClient("ingestion_api")
-	huma.AutoRegister(huma.NewGroup(api, "/api/ingestion"), ingestion.NewAPI(ingestionApiOpenFeatureClient))
+	huma.AutoRegister(huma.NewGroup(api, "/api/ingestion"), ingestion.NewAPI(openfeatureClient))
 
 	// Organisations API will handle all requests related to organisations, such as creating, updating,
 	// deleting, and retrieving organisation information.
-	organisationsApiOpenFeatureClient := openfeature.NewClient("organisations_api")
-	huma.AutoRegister(huma.NewGroup(api, "/api/organisations"), organisations.NewAPI(organisationsApiOpenFeatureClient))
+	huma.AutoRegister(huma.NewGroup(api, "/api/organisations"), organisations.NewAPI(openfeatureClient))
 
 	// Users API will handle all requests related to user management, such as creating, updating,
 	// deleting, and retrieving user information.
-	usersApiOpenFeatureClient := openfeature.NewClient("users_api")
-	huma.AutoRegister(huma.NewGroup(api, "/api/users"), users.NewAPI(usersApiOpenFeatureClient))
+	huma.AutoRegister(huma.NewGroup(api, "/api/users"), users.NewAPI(openfeatureClient))
 
 	return r
 }

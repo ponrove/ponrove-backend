@@ -41,7 +41,8 @@ type (
 	RootEndpointResponse struct {
 		Status int `header:"-"`
 		Body   struct {
-			Message string `json:"message"`
+			Message         string `json:"message"`
+			TestFeatureFlag bool   `json:"test_feature_flag"`
 		}
 	}
 )
@@ -53,12 +54,18 @@ func (a *api) RegisterRootEndpoint(api huma.API) {
 		Path:        "/",
 		Tags:        []string{"Organisations"},
 	}, func(ctx context.Context, i *RootEndpointRequest) (*RootEndpointResponse, error) {
+		testflag, err := a.openfeatureClient.BooleanValue(ctx, "test-flag", false, openfeature.EvaluationContext{})
+		if err != nil {
+			return nil, err
+		}
 		return &RootEndpointResponse{
 			Status: 200,
 			Body: struct {
-				Message string `json:"message"`
+				Message         string `json:"message"`
+				TestFeatureFlag bool   `json:"test_feature_flag"`
 			}{
-				Message: "Organisations API root endpoint.",
+				Message:         "Organisations API root endpoint.",
+				TestFeatureFlag: testflag,
 			},
 		}, nil
 	})
