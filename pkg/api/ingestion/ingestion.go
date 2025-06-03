@@ -6,20 +6,20 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/open-feature/go-sdk/openfeature"
-	"github.com/ponrove/ponrove-backend/pkg/shared"
+	"github.com/ponrove/configura"
 )
 
 const (
-	INGESTION_API_TEST_FLAG shared.Variable[bool] = "INGESTION_API_TEST_FLAG"
+	INGESTION_API_TEST_FLAG configura.Variable[bool] = "INGESTION_API_TEST_FLAG"
 )
 
 type server struct {
 	openfeatureClient *openfeature.Client
-	config            shared.Config
+	config            configura.Config
 }
 
 // Register creates a new instance of the Ingestion API.
-func Register(cfg shared.Config, api huma.API) error {
+func Register(cfg configura.Config, api huma.API) error {
 	err := cfg.ConfigurationKeysRegistered(
 		INGESTION_API_TEST_FLAG,
 	)
@@ -52,7 +52,7 @@ func (a *server) RegisterRootEndpoint(api huma.API) {
 		Path:        "/",
 		Tags:        []string{"Ingestion"},
 	}, func(ctx context.Context, i *RootEndpointRequest) (*RootEndpointResponse, error) {
-		testflag, err := a.openfeatureClient.BooleanValue(ctx, "test-flag", a.config.GetBool(INGESTION_API_TEST_FLAG), openfeature.EvaluationContext{})
+		testflag, err := a.openfeatureClient.BooleanValue(ctx, "test-flag", a.config.Bool(INGESTION_API_TEST_FLAG), openfeature.EvaluationContext{})
 		if err != nil {
 			return nil, err
 		}

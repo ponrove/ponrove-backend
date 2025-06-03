@@ -3,11 +3,11 @@ module github.com/ponrove/ponrove-backend
 go 1.24.3
 
 require (
-	github.com/Kansuler/env v1.0.0
 	github.com/danielgtaylor/huma/v2 v2.32.0
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/open-feature/go-sdk v1.14.1
 	github.com/open-feature/go-sdk-contrib/providers/go-feature-flag v0.2.5
+	github.com/ponrove/configura v0.0.0-20250603215952-80b35e5ee279
 	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.10.0
 )

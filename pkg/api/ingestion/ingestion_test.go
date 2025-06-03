@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/ponrove/configura"
 	"github.com/ponrove/ponrove-backend/pkg/api/ingestion"
-	"github.com/ponrove/ponrove-backend/pkg/shared"
 	"github.com/ponrove/ponrove-backend/test/testserver"
 	"github.com/stretchr/testify/suite"
 )
@@ -23,12 +23,11 @@ func (suite *IngestionAPITestSuite) TestRootEndpointFeatureFlagTrue() {
 		TestFeatureFlag bool   `json:"test_feature_flag"`
 	}
 
+	cfg := configura.NewConfigImpl()
+	cfg.RegBool[ingestion.INGESTION_API_TEST_FLAG] = true
+
 	srv, err := testserver.CreateServer(
-		testserver.WithConfig(shared.ConfigImpl{
-			Bool: map[shared.Variable[bool]]bool{
-				ingestion.INGESTION_API_TEST_FLAG: true,
-			},
-		}),
+		testserver.WithConfig(cfg),
 		testserver.WithAPI(ingestion.Register),
 	)
 	suite.NoError(err)
@@ -52,13 +51,11 @@ func (suite *IngestionAPITestSuite) TestRootEndpointFeatureFlagFalse() {
 		Message         string `json:"message"`
 		TestFeatureFlag bool   `json:"test_feature_flag"`
 	}
+	cfg := configura.NewConfigImpl()
+	cfg.RegBool[ingestion.INGESTION_API_TEST_FLAG] = false
 
 	srv, err := testserver.CreateServer(
-		testserver.WithConfig(shared.ConfigImpl{
-			Bool: map[shared.Variable[bool]]bool{
-				ingestion.INGESTION_API_TEST_FLAG: false,
-			},
-		}),
+		testserver.WithConfig(cfg),
 		testserver.WithAPI(ingestion.Register),
 	)
 	suite.NoError(err)

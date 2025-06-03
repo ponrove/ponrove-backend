@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/open-feature/go-sdk/openfeature"
+	"github.com/ponrove/configura"
 	"github.com/ponrove/ponrove-backend/internal/client"
 	"github.com/ponrove/ponrove-backend/internal/config"
-	"github.com/ponrove/ponrove-backend/pkg/shared"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,21 +14,21 @@ type TestSetOpenFeatureProviderTestCase struct {
 	name     string
 	expected string
 	err      error
-	cfg      shared.Config
+	cfg      configura.Config
 }
 
 var TestSetOpenFeatureProviderTestCases = []TestSetOpenFeatureProviderTestCase{
 	{
 		name:     "Default NoopProvider",
 		expected: "NoopProvider",
-		cfg:      shared.ConfigImpl{},
+		cfg:      configura.ConfigImpl{},
 		err:      nil,
 	},
 	{
 		name:     "NoopProvider without URL",
 		expected: "NoopProvider",
-		cfg: &shared.ConfigImpl{
-			Str: map[shared.Variable[string]]string{
+		cfg: &configura.ConfigImpl{
+			RegString: map[configura.Variable[string]]string{
 				config.SERVER_OPENFEATURE_PROVIDER_NAME: "NoopProvider",
 			},
 		},
@@ -36,8 +36,8 @@ var TestSetOpenFeatureProviderTestCases = []TestSetOpenFeatureProviderTestCase{
 	{
 		name:     "Go Feature Flag Provider",
 		expected: "GO Feature Flag Provider",
-		cfg: &shared.ConfigImpl{
-			Str: map[shared.Variable[string]]string{
+		cfg: &configura.ConfigImpl{
+			RegString: map[configura.Variable[string]]string{
 				config.SERVER_OPENFEATURE_PROVIDER_NAME: "go-feature-flag",
 				config.SERVER_OPENFEATURE_PROVIDER_URL:  "http://custom-provider.example.com",
 			},
@@ -47,8 +47,8 @@ var TestSetOpenFeatureProviderTestCases = []TestSetOpenFeatureProviderTestCase{
 	{
 		name: "Provider name given, missing url",
 		err:  client.ErrOpenFeatureProviderURLNotSet,
-		cfg: &shared.ConfigImpl{
-			Str: map[shared.Variable[string]]string{
+		cfg: &configura.ConfigImpl{
+			RegString: map[configura.Variable[string]]string{
 				config.SERVER_OPENFEATURE_PROVIDER_NAME: "go-feature-flag",
 			},
 		},
@@ -56,8 +56,8 @@ var TestSetOpenFeatureProviderTestCases = []TestSetOpenFeatureProviderTestCase{
 	{
 		name:     "Provider URL given, missing name",
 		expected: "NoopProvider",
-		cfg: &shared.ConfigImpl{
-			Str: map[shared.Variable[string]]string{
+		cfg: &configura.ConfigImpl{
+			RegString: map[configura.Variable[string]]string{
 				config.SERVER_OPENFEATURE_PROVIDER_URL: "http://custom-provider.example.com",
 			},
 		},
@@ -65,8 +65,8 @@ var TestSetOpenFeatureProviderTestCases = []TestSetOpenFeatureProviderTestCase{
 	{
 		name: "Provider URL invalid",
 		err:  client.ErrInvalidOpenFeatureProviderURL,
-		cfg: &shared.ConfigImpl{
-			Str: map[shared.Variable[string]]string{
+		cfg: &configura.ConfigImpl{
+			RegString: map[configura.Variable[string]]string{
 				config.SERVER_OPENFEATURE_PROVIDER_NAME: "go-feature-flag",
 				config.SERVER_OPENFEATURE_PROVIDER_URL:  "http:/i\nvalid-url",
 			},

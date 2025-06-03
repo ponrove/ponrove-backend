@@ -39,11 +39,11 @@ func main() {
 	defer stop()
 
 	srv := http.Server{
-		Addr: fmt.Sprintf(":%d", cfg.GetInt64(config.SERVER_PORT)),
+		Addr: fmt.Sprintf(":%d", cfg.Int64(config.SERVER_PORT)),
 		// Use the context that includes a notify channel for graceful shutdown.
 		BaseContext:  func(_ net.Listener) context.Context { return serverCtx },
 		ReadTimeout:  time.Second,
-		WriteTimeout: time.Duration(cfg.GetInt64(config.SERVER_REQUEST_TIMEOUT)) * time.Second,
+		WriteTimeout: time.Duration(cfg.Int64(config.SERVER_REQUEST_TIMEOUT)) * time.Second,
 		Handler:      r,
 	}
 
@@ -65,7 +65,7 @@ func main() {
 		stop()
 	}
 
-	shutdownCtx, shutdownStop := context.WithTimeout(context.Background(), time.Duration(cfg.GetInt64(config.SERVER_SHUTDOWN_TIMEOUT))*time.Second)
+	shutdownCtx, shutdownStop := context.WithTimeout(context.Background(), time.Duration(cfg.Int64(config.SERVER_SHUTDOWN_TIMEOUT))*time.Second)
 	defer shutdownStop()
 	go func() {
 		<-shutdownCtx.Done()

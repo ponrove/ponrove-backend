@@ -6,12 +6,12 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
+	"github.com/ponrove/configura"
 	"github.com/ponrove/ponrove-backend/internal/middleware"
 	"github.com/ponrove/ponrove-backend/pkg/api"
-	"github.com/ponrove/ponrove-backend/pkg/shared"
 )
 
-func New(cfg shared.Config) (http.Handler, error) {
+func New(cfg configura.Config) (http.Handler, error) {
 	r := chi.NewRouter()
 
 	r.Use(

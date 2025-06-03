@@ -8,19 +8,19 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
+	"github.com/ponrove/configura"
 	"github.com/ponrove/ponrove-backend/internal/config"
 	"github.com/ponrove/ponrove-backend/pkg/api"
-	"github.com/ponrove/ponrove-backend/pkg/shared"
 	"github.com/rs/zerolog/log"
 )
 
-type ApiHook func(config shared.Config, api huma.API) error
+type ApiHook func(config configura.Config, api huma.API) error
 
 // testServerConfig is a configuration struct that holds the options for the test server, and apply them after potential
 // modifications from the Option functions.
 type testServerConfig struct {
 	captureLog    io.Writer
-	serviceConfig shared.Config
+	serviceConfig configura.Config
 	apiPackages   []ApiHook
 }
 
@@ -46,8 +46,8 @@ func WithAPI(api ApiHook) Option {
 	}
 }
 
-// WithConfig allows the caller to pass in a custom configuration for the server from an existing shared.Config.
-func WithConfig(cfg shared.Config) Option {
+// WithConfig allows the caller to pass in a custom configuration for the server from an existing configura.Config.
+func WithConfig(cfg configura.Config) Option {
 	return func(tsc *testServerConfig) {
 		tsc.serviceConfig = cfg
 	}

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/ponrove/configura"
 	"github.com/ponrove/ponrove-backend/pkg/api/organisations"
-	"github.com/ponrove/ponrove-backend/pkg/shared"
 	"github.com/ponrove/ponrove-backend/test/testserver"
 	"github.com/stretchr/testify/suite"
 )
@@ -22,13 +22,10 @@ func (suite *OrganisationsAPITestSuite) TestRootEndpointFeatureFlagTrue() {
 		Message         string `json:"message"`
 		TestFeatureFlag bool   `json:"test_feature_flag"`
 	}
-
+	cfg := configura.NewConfigImpl()
+	cfg.RegBool[organisations.ORGANISATIONS_API_TEST_FLAG] = true
 	srv, err := testserver.CreateServer(
-		testserver.WithConfig(shared.ConfigImpl{
-			Bool: map[shared.Variable[bool]]bool{
-				organisations.ORGANISATIONS_API_TEST_FLAG: true,
-			},
-		}),
+		testserver.WithConfig(cfg),
 		testserver.WithAPI(organisations.Register),
 	)
 	suite.NoError(err)
@@ -52,13 +49,11 @@ func (suite *OrganisationsAPITestSuite) TestRootEndpointFeatureFlagFalse() {
 		Message         string `json:"message"`
 		TestFeatureFlag bool   `json:"test_feature_flag"`
 	}
+	cfg := configura.NewConfigImpl()
+	cfg.RegBool[organisations.ORGANISATIONS_API_TEST_FLAG] = false
 
 	srv, err := testserver.CreateServer(
-		testserver.WithConfig(shared.ConfigImpl{
-			Bool: map[shared.Variable[bool]]bool{
-				organisations.ORGANISATIONS_API_TEST_FLAG: false,
-			},
-		}),
+		testserver.WithConfig(cfg),
 		testserver.WithAPI(organisations.Register),
 	)
 	suite.NoError(err)
