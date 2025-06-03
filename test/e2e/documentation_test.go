@@ -15,7 +15,9 @@ type E2ETestDocumentationSuite struct {
 }
 
 func (suite *E2ETestDocumentationSuite) SetupSuite() {
-	suite.srv = testserver.CreateServer()
+	var err error
+	suite.srv, err = testserver.CreateServer()
+	suite.NoError(err)
 }
 
 func (suite *E2ETestDocumentationSuite) TearDownSuite() {

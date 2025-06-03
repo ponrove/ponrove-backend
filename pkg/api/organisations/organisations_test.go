@@ -5,21 +5,14 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/open-feature/go-sdk/openfeature"
 	"github.com/ponrove/ponrove-backend/pkg/api/organisations"
+	"github.com/ponrove/ponrove-backend/pkg/shared"
 	"github.com/ponrove/ponrove-backend/test/testserver"
 	"github.com/stretchr/testify/suite"
 )
 
 type OrganisationsAPITestSuite struct {
 	suite.Suite
-	openfeatureClient *openfeature.Client
-}
-
-func (suite *OrganisationsAPITestSuite) SetupTest() {
-	// Initialize the OpenFeature client with a Noop provider for testing.
-	openfeature.SetProvider(openfeature.NoopProvider{})
-	suite.openfeatureClient = openfeature.NewClient("organisations-test-client")
 }
 
 // Bootstrap Test for foundational logic, this will become obsolete.
@@ -30,12 +23,18 @@ func (suite *OrganisationsAPITestSuite) TestRootEndpointFeatureFlagTrue() {
 		TestFeatureFlag bool   `json:"test_feature_flag"`
 	}
 
-	srv := testserver.CreateServer(
+	srv, err := testserver.CreateServer(
+		testserver.WithConfig(shared.ConfigImpl{
+			Bool: map[shared.Variable[bool]]bool{
+				organisations.ORGANISATIONS_API_TEST_FLAG: true,
+			},
+		}),
 		testserver.WithAPI(organisations.Register),
 	)
+	suite.NoError(err)
 	defer srv.Close()
 
-	resp, err := http.Get(srv.URL)
+	resp, err := http.Get(srv.URL + "/api/organisations/")
 	suite.NoError(err)
 	defer resp.Body.Close()
 	suite.Equal(http.StatusOK, resp.StatusCode)
@@ -54,11 +53,17 @@ func (suite *OrganisationsAPITestSuite) TestRootEndpointFeatureFlagFalse() {
 		TestFeatureFlag bool   `json:"test_feature_flag"`
 	}
 
-	srv := testserver.CreateServer(
+	srv, err := testserver.CreateServer(
+		testserver.WithConfig(shared.ConfigImpl{
+			Bool: map[shared.Variable[bool]]bool{
+				organisations.ORGANISATIONS_API_TEST_FLAG: false,
+			},
+		}),
 		testserver.WithAPI(organisations.Register),
 	)
+	suite.NoError(err)
 	defer srv.Close()
-	resp, err := http.Get(srv.URL)
+	resp, err := http.Get(srv.URL + "/api/organisations/")
 	suite.NoError(err)
 	defer resp.Body.Close()
 	suite.Equal(http.StatusOK, resp.StatusCode)

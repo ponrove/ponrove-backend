@@ -18,7 +18,6 @@ type UsersApiConfig struct {
 }
 
 type server struct {
-	Path              string
 	openfeatureClient *openfeature.Client
 	config            shared.Config
 }

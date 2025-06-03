@@ -14,12 +14,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type ApiHook func(config shared.Config, api huma.API) error
+
 // testServerConfig is a configuration struct that holds the options for the test server, and apply them after potential
 // modifications from the Option functions.
 type testServerConfig struct {
 	captureLog    io.Writer
 	serviceConfig shared.Config
-	apiPackages   []func(config shared.Config, api huma.API) error
+	apiPackages   []ApiHook
 }
 
 // Option is a function that modifies the server configuration.
@@ -35,18 +37,25 @@ func CaptureLogToWriter(w io.Writer) Option {
 
 // WithConfig allows the caller to pass in a custom configuration for the server. This is useful for testing with
 // specific apis enabled.
-func WithAPI(api func(config shared.Config, api huma.API) error) Option {
+func WithAPI(api ApiHook) Option {
 	return func(cfg *testServerConfig) {
 		if cfg.apiPackages == nil {
-			cfg.apiPackages = []func(config shared.Config, api huma.API) error{} // Ensure api is initialized to an empty slice if not provided
+			cfg.apiPackages = []ApiHook{} // Ensure api is initialized to an empty slice if not provided
 		}
 		cfg.apiPackages = append(cfg.apiPackages, api)
 	}
 }
 
+// WithConfig allows the caller to pass in a custom configuration for the server from an existing shared.Config.
+func WithConfig(cfg shared.Config) Option {
+	return func(tsc *testServerConfig) {
+		tsc.serviceConfig = cfg
+	}
+}
+
 // CreateServer creates a new test server with the provided options. The options are very useful to pass in unique
 // configurations, custom mocks, or other settings.
-func CreateServer(opts ...Option) *httptest.Server {
+func CreateServer(opts ...Option) (*httptest.Server, error) {
 	r := chi.NewRouter()
 
 	// Init a default server configuration, then apply any options passed in.
@@ -87,11 +96,10 @@ func CreateServer(opts ...Option) *httptest.Server {
 	for _, apiPackage := range cfg.apiPackages {
 		err := apiPackage(cfg.serviceConfig, h)
 		if err != nil {
-			log.Error().Err(err).Msg("failed to register API package")
-			return nil // Return nil if there is an error registering the API package
+			return nil, err
 		}
 	}
 
 	// Start a test server with the application router
-	return httptest.NewServer(r)
+	return httptest.NewServer(r), nil
 }

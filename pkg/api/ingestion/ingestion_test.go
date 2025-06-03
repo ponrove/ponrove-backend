@@ -5,21 +5,14 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/open-feature/go-sdk/openfeature"
 	"github.com/ponrove/ponrove-backend/pkg/api/ingestion"
+	"github.com/ponrove/ponrove-backend/pkg/shared"
 	"github.com/ponrove/ponrove-backend/test/testserver"
 	"github.com/stretchr/testify/suite"
 )
 
 type IngestionAPITestSuite struct {
 	suite.Suite
-	openfeatureClient *openfeature.Client
-}
-
-func (suite *IngestionAPITestSuite) SetupTest() {
-	// Initialize the OpenFeature client with a Noop provider for testing.
-	openfeature.SetProvider(openfeature.NoopProvider{})
-	suite.openfeatureClient = openfeature.NewClient("ingestion-test-client")
 }
 
 // Bootstrap Test for foundational logic, this will become obsolete.
@@ -30,12 +23,18 @@ func (suite *IngestionAPITestSuite) TestRootEndpointFeatureFlagTrue() {
 		TestFeatureFlag bool   `json:"test_feature_flag"`
 	}
 
-	srv := testserver.CreateServer(
+	srv, err := testserver.CreateServer(
+		testserver.WithConfig(shared.ConfigImpl{
+			Bool: map[shared.Variable[bool]]bool{
+				ingestion.INGESTION_API_TEST_FLAG: true,
+			},
+		}),
 		testserver.WithAPI(ingestion.Register),
 	)
+	suite.NoError(err)
 	defer srv.Close()
 
-	resp, err := http.Get(srv.URL + "/api/ingestion")
+	resp, err := http.Get(srv.URL + "/api/ingestion/")
 	suite.NoError(err)
 	defer resp.Body.Close()
 	suite.Equal(http.StatusOK, resp.StatusCode)
@@ -54,11 +53,17 @@ func (suite *IngestionAPITestSuite) TestRootEndpointFeatureFlagFalse() {
 		TestFeatureFlag bool   `json:"test_feature_flag"`
 	}
 
-	srv := testserver.CreateServer(
+	srv, err := testserver.CreateServer(
+		testserver.WithConfig(shared.ConfigImpl{
+			Bool: map[shared.Variable[bool]]bool{
+				ingestion.INGESTION_API_TEST_FLAG: false,
+			},
+		}),
 		testserver.WithAPI(ingestion.Register),
 	)
+	suite.NoError(err)
 	defer srv.Close()
-	resp, err := http.Get(srv.URL + "/api/ingestion")
+	resp, err := http.Get(srv.URL + "/api/ingestion/")
 	suite.NoError(err)
 	defer resp.Body.Close()
 	suite.Equal(http.StatusOK, resp.StatusCode)
