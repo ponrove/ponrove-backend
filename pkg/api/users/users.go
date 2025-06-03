@@ -5,38 +5,30 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/danielgtaylor/huma/v2/adapters/humachi"
-	"github.com/go-chi/chi/v5"
 	"github.com/open-feature/go-sdk/openfeature"
-	"github.com/ponrove/ponrove-backend/internal/pkg/configuration"
+	"github.com/ponrove/ponrove-backend/pkg/shared"
 )
 
 const (
-	APIVersion = "1.0.0"
-	APIName    = "Users API"
+	USERS_API_TEST_FLAG shared.Variable[bool] = "USERS_API_TEST_FLAG" // Bootstrap flag, will become obsolete
 )
 
-type api struct {
+type UsersApiConfig struct {
+	UsersApiTestFlag bool // Bootstrap flag, will become obsolete
+}
+
+type server struct {
+	Path              string
 	openfeatureClient *openfeature.Client
-	config            configuration.UsersApiConfig
+	config            shared.Config
 }
 
-// NewAPI creates a new instance of the Users API with the provided OpenFeature client for configuration and feature
-// flag evaluation.
-func NewAPI(openfeatureClient *openfeature.Client, cfg configuration.UsersApiConfig) *api {
-	return &api{
-		openfeatureClient: openfeatureClient,
+// Register creates a new instance of the Users API.
+func Register(cfg shared.Config, api huma.API) {
+	huma.AutoRegister(huma.NewGroup(api, "/api/users"), &server{
+		openfeatureClient: openfeature.NewClient("users-api"),
 		config:            cfg,
-	}
-}
-
-// NewAPIHandler creates a new HTTP handler for the Users API using the provided OpenFeature client.
-func NewAPIHandler(openfeatureClient *openfeature.Client, cfg configuration.UsersApiConfig) http.Handler {
-	r := chi.NewRouter()
-	api := humachi.New(r, huma.DefaultConfig(APIName, APIVersion))
-	huma.AutoRegister(api, NewAPI(openfeatureClient, cfg))
-
-	return r
+	})
 }
 
 type (
@@ -51,14 +43,14 @@ type (
 )
 
 // Bootstrap endpoint for foundational logic, this will become obsolete.
-func (a *api) RegisterRootEndpoint(api huma.API) {
+func (a *server) RegisterRootEndpoint(api huma.API) {
 	huma.Register(api, huma.Operation{
 		OperationID: "UsersRoot",
 		Method:      http.MethodGet,
 		Path:        "/",
 		Tags:        []string{"Users"},
 	}, func(ctx context.Context, i *RootEndpointRequest) (*RootEndpointResponse, error) {
-		testflag, err := a.openfeatureClient.BooleanValue(ctx, "test-flag", a.config.UsersApiTestFlag, openfeature.EvaluationContext{})
+		testflag, err := a.openfeatureClient.BooleanValue(ctx, "test-flag", a.config.GetBool(USERS_API_TEST_FLAG), openfeature.EvaluationContext{})
 		if err != nil {
 			return nil, err
 		}

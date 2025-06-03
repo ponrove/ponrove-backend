@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/open-feature/go-sdk/openfeature"
-	"github.com/ponrove/ponrove-backend/internal/pkg/configuration"
 	"github.com/ponrove/ponrove-backend/pkg/api/organisations"
 	"github.com/ponrove/ponrove-backend/test/testserver"
 	"github.com/stretchr/testify/suite"
@@ -32,11 +31,7 @@ func (suite *OrganisationsAPITestSuite) TestRootEndpointFeatureFlagTrue() {
 	}
 
 	srv := testserver.CreateServer(
-		testserver.WithMux(func() http.Handler {
-			return organisations.NewAPIHandler(suite.openfeatureClient, configuration.OrganisationsApiConfig{
-				OrganisationsApiTestFlag: true,
-			})
-		}),
+		testserver.WithAPI(organisations.Register),
 	)
 	defer srv.Close()
 
@@ -60,11 +55,7 @@ func (suite *OrganisationsAPITestSuite) TestRootEndpointFeatureFlagFalse() {
 	}
 
 	srv := testserver.CreateServer(
-		testserver.WithMux(func() http.Handler {
-			return organisations.NewAPIHandler(suite.openfeatureClient, configuration.OrganisationsApiConfig{
-				OrganisationsApiTestFlag: false,
-			})
-		}),
+		testserver.WithAPI(organisations.Register),
 	)
 	defer srv.Close()
 	resp, err := http.Get(srv.URL)

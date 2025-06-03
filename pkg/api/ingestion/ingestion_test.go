@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/open-feature/go-sdk/openfeature"
-	"github.com/ponrove/ponrove-backend/internal/pkg/configuration"
 	"github.com/ponrove/ponrove-backend/pkg/api/ingestion"
 	"github.com/ponrove/ponrove-backend/test/testserver"
 	"github.com/stretchr/testify/suite"
@@ -32,15 +31,11 @@ func (suite *IngestionAPITestSuite) TestRootEndpointFeatureFlagTrue() {
 	}
 
 	srv := testserver.CreateServer(
-		testserver.WithMux(func() http.Handler {
-			return ingestion.NewAPIHandler(suite.openfeatureClient, configuration.IngestionApiConfig{
-				IngestionApiTestFlag: true,
-			})
-		}),
+		testserver.WithAPI(ingestion.Register),
 	)
 	defer srv.Close()
 
-	resp, err := http.Get(srv.URL)
+	resp, err := http.Get(srv.URL + "/api/ingestion")
 	suite.NoError(err)
 	defer resp.Body.Close()
 	suite.Equal(http.StatusOK, resp.StatusCode)
@@ -60,14 +55,10 @@ func (suite *IngestionAPITestSuite) TestRootEndpointFeatureFlagFalse() {
 	}
 
 	srv := testserver.CreateServer(
-		testserver.WithMux(func() http.Handler {
-			return ingestion.NewAPIHandler(suite.openfeatureClient, configuration.IngestionApiConfig{
-				IngestionApiTestFlag: false,
-			})
-		}),
+		testserver.WithAPI(ingestion.Register),
 	)
 	defer srv.Close()
-	resp, err := http.Get(srv.URL)
+	resp, err := http.Get(srv.URL + "/api/ingestion")
 	suite.NoError(err)
 	defer resp.Body.Close()
 	suite.Equal(http.StatusOK, resp.StatusCode)
@@ -77,6 +68,32 @@ func (suite *IngestionAPITestSuite) TestRootEndpointFeatureFlagFalse() {
 	suite.Equal("Ingestion API root endpoint.", body.Message)
 	suite.False(body.TestFeatureFlag, "Expected test_feature_flag to be true")
 }
+
+/*
+func (suite *IngestionAPITestSuite) TestIngestionAPIEndpointsMustExist() {
+	srv := testserver.CreateServer(
+		testserver.WithAPI(ingestion.Register),
+	)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/openapi.json")
+	suite.NoError(err, "failed to get OpenAPI documentation")
+	defer resp.Body.Close()
+
+	var openapiSpec huma.OpenAPI
+	err = json.NewDecoder(resp.Body).Decode(&openapiSpec)
+	suite.Require().NoError(err, "failed to parse OpenAPI documentation")
+
+	// Check if the Ingestion API is documented
+	for _, path := range openapiSpec.Paths {
+		if path.Get != nil && path.Get.OperationID == "IngestionRoot" {
+			return // Found the Ingestion API root endpoint
+		}
+	}
+
+	suite.Fail("Ingestion API root endpoint not found in OpenAPI documentation")
+}
+*/
 
 func TestIngestionAPITestSuite(t *testing.T) {
 	t.Parallel()

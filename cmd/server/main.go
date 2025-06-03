@@ -9,23 +9,24 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ponrove/ponrove-backend/internal/client"
+	"github.com/ponrove/ponrove-backend/internal/config"
+	"github.com/ponrove/ponrove-backend/internal/router"
 	"github.com/rs/zerolog/log"
-
-	"github.com/ponrove/ponrove-backend/internal/pkg/configuration"
-	"github.com/ponrove/ponrove-backend/internal/pkg/configuration/flags"
-	"github.com/ponrove/ponrove-backend/internal/pkg/mux"
 )
 
 func main() {
 	var err error
-	cfg := configuration.New()
+	cfg := config.New()
 
 	// With configuration loaded, we can now set up the OpenFeature provider. If no provider is set, the openfeature
 	// default provider will be nooped, which fallbacks to environment variables and other defaults.
-	err = flags.SetOpenFeatureProvider(cfg)
+	err = client.SetOpenFeatureProvider(cfg)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to set openfeature provider")
 	}
+
+	r := router.New(cfg)
 
 	// Add default logger to the context, which all http handlers derive their context (and logger) from.
 	serverCtx := log.Logger.WithContext(context.Background())
@@ -35,12 +36,12 @@ func main() {
 	defer stop()
 
 	srv := http.Server{
-		Addr: fmt.Sprintf(":%d", cfg.ServerPort),
+		Addr: fmt.Sprintf(":%d", cfg.GetInt64(config.SERVER_PORT)),
 		// Use the context that includes a notify channel for graceful shutdown.
 		BaseContext:  func(_ net.Listener) context.Context { return serverCtx },
 		ReadTimeout:  time.Second,
-		WriteTimeout: time.Duration(cfg.ServerRequestTimeout) * time.Second,
-		Handler:      mux.New(cfg),
+		WriteTimeout: time.Duration(cfg.GetInt64(config.SERVER_REQUEST_TIMEOUT)) * time.Second,
+		Handler:      r,
 	}
 
 	srvErr := make(chan error, 1)
@@ -61,7 +62,7 @@ func main() {
 		stop()
 	}
 
-	shutdownCtx, shutdownStop := context.WithTimeout(context.Background(), time.Duration(cfg.ServerShutdownTimeout)*time.Second)
+	shutdownCtx, shutdownStop := context.WithTimeout(context.Background(), time.Duration(cfg.GetInt64(config.SERVER_SHUTDOWN_TIMEOUT))*time.Second)
 	defer shutdownStop()
 	go func() {
 		<-shutdownCtx.Done()

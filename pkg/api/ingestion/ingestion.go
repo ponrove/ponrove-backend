@@ -5,38 +5,25 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/danielgtaylor/huma/v2/adapters/humachi"
-	"github.com/go-chi/chi/v5"
 	"github.com/open-feature/go-sdk/openfeature"
-	"github.com/ponrove/ponrove-backend/internal/pkg/configuration"
+	"github.com/ponrove/ponrove-backend/pkg/shared"
 )
 
 const (
-	APIVersion = "1.0.0"
-	APIName    = "Ingestion API"
+	INGESTION_API_TEST_FLAG shared.Variable[bool] = "INGESTION_API_TEST_FLAG"
 )
 
-type api struct {
+type server struct {
 	openfeatureClient *openfeature.Client
-	config            configuration.IngestionApiConfig
+	config            shared.Config
 }
 
-// NewAPI creates a new instance of the Ingestion API with the provided OpenFeature client for configuration and feature
-// flag evaluation.
-func NewAPI(openfeatureClient *openfeature.Client, cfg configuration.IngestionApiConfig) *api {
-	return &api{
-		openfeatureClient: openfeatureClient,
-		config:            cfg,
-	}
-}
-
-// NewAPIHandler creates a new HTTP handler for the Ingestion API using the provided OpenFeature client.
-func NewAPIHandler(openfeatureClient *openfeature.Client, cfg configuration.IngestionApiConfig) http.Handler {
-	r := chi.NewRouter()
-	api := humachi.New(r, huma.DefaultConfig(APIName, APIVersion))
-	huma.AutoRegister(api, NewAPI(openfeatureClient, cfg))
-
-	return r
+// Register creates a new instance of the Ingestion API.
+func Register(config shared.Config, api huma.API) {
+	huma.AutoRegister(huma.NewGroup(api, "/api/ingestion"), &server{
+		openfeatureClient: openfeature.NewClient("ingestion-api"),
+		config:            config,
+	})
 }
 
 type (
@@ -51,14 +38,14 @@ type (
 )
 
 // Bootstrap endpoint for foundational logic, this will become obsolete.
-func (a *api) RegisterRootEndpoint(api huma.API) {
+func (a *server) RegisterRootEndpoint(api huma.API) {
 	huma.Register(api, huma.Operation{
 		OperationID: "IngestionRoot",
 		Method:      http.MethodGet,
 		Path:        "/",
 		Tags:        []string{"Ingestion"},
 	}, func(ctx context.Context, i *RootEndpointRequest) (*RootEndpointResponse, error) {
-		testflag, err := a.openfeatureClient.BooleanValue(ctx, "test-flag", a.config.IngestionApiTestFlag, openfeature.EvaluationContext{})
+		testflag, err := a.openfeatureClient.BooleanValue(ctx, "test-flag", a.config.GetBool(INGESTION_API_TEST_FLAG), openfeature.EvaluationContext{})
 		if err != nil {
 			return nil, err
 		}
