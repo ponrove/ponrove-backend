@@ -10,72 +10,74 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type TestSetOpenFeatureProviderTestCase struct {
+	name     string
+	expected string
+	err      error
+	cfg      shared.Config
+}
+
+var TestSetOpenFeatureProviderTestCases = []TestSetOpenFeatureProviderTestCase{
+	{
+		name:     "Default NoopProvider",
+		expected: "NoopProvider",
+		cfg:      shared.ConfigImpl{},
+		err:      nil,
+	},
+	{
+		name:     "NoopProvider without URL",
+		expected: "NoopProvider",
+		cfg: &shared.ConfigImpl{
+			Str: map[shared.Variable[string]]string{
+				config.SERVER_OPENFEATURE_PROVIDER_NAME: "NoopProvider",
+			},
+		},
+	},
+	{
+		name:     "Go Feature Flag Provider",
+		expected: "GO Feature Flag Provider",
+		cfg: &shared.ConfigImpl{
+			Str: map[shared.Variable[string]]string{
+				config.SERVER_OPENFEATURE_PROVIDER_NAME: "go-feature-flag",
+				config.SERVER_OPENFEATURE_PROVIDER_URL:  "http://custom-provider.example.com",
+			},
+		},
+		err: nil,
+	},
+	{
+		name: "Provider name given, missing url",
+		err:  client.ErrOpenFeatureProviderURLNotSet,
+		cfg: &shared.ConfigImpl{
+			Str: map[shared.Variable[string]]string{
+				config.SERVER_OPENFEATURE_PROVIDER_NAME: "go-feature-flag",
+			},
+		},
+	},
+	{
+		name:     "Provider URL given, missing name",
+		expected: "NoopProvider",
+		cfg: &shared.ConfigImpl{
+			Str: map[shared.Variable[string]]string{
+				config.SERVER_OPENFEATURE_PROVIDER_URL: "http://custom-provider.example.com",
+			},
+		},
+	},
+	{
+		name: "Provider URL invalid",
+		err:  client.ErrInvalidOpenFeatureProviderURL,
+		cfg: &shared.ConfigImpl{
+			Str: map[shared.Variable[string]]string{
+				config.SERVER_OPENFEATURE_PROVIDER_NAME: "go-feature-flag",
+				config.SERVER_OPENFEATURE_PROVIDER_URL:  "http:/i\nvalid-url",
+			},
+		},
+	},
+}
+
 // TestSetOpenFeatureProvider tests the SetOpenFeatureProvider function to ensure it correctly sets the OpenFeature
 // provider based on the provided configuration.
 func TestSetOpenFeatureProvider(t *testing.T) {
-	testCases := []struct {
-		name     string
-		expected string
-		err      error
-		cfg      shared.Config
-	}{
-		{
-			name:     "Default NoopProvider",
-			expected: "NoopProvider",
-			cfg:      shared.ConfigImpl{},
-			err:      nil,
-		},
-		{
-			name:     "NoopProvider without URL",
-			expected: "NoopProvider",
-			cfg: &shared.ConfigImpl{
-				Str: map[shared.Variable[string]]string{
-					config.SERVER_OPENFEATURE_PROVIDER_NAME: "NoopProvider",
-				},
-			},
-		},
-		{
-			name:     "Go Feature Flag Provider",
-			expected: "GO Feature Flag Provider",
-			cfg: &shared.ConfigImpl{
-				Str: map[shared.Variable[string]]string{
-					config.SERVER_OPENFEATURE_PROVIDER_NAME: "go-feature-flag",
-					config.SERVER_OPENFEATURE_PROVIDER_URL:  "http://custom-provider.example.com",
-				},
-			},
-			err: nil,
-		},
-		{
-			name: "Provider name given, missing url",
-			err:  client.ErrOpenFeatureProviderURLNotSet,
-			cfg: &shared.ConfigImpl{
-				Str: map[shared.Variable[string]]string{
-					config.SERVER_OPENFEATURE_PROVIDER_NAME: "go-feature-flag",
-				},
-			},
-		},
-		{
-			name:     "Provider URL given, missing name",
-			expected: "NoopProvider",
-			cfg: &shared.ConfigImpl{
-				Str: map[shared.Variable[string]]string{
-					config.SERVER_OPENFEATURE_PROVIDER_URL: "http://custom-provider.example.com",
-				},
-			},
-		},
-		{
-			name: "Provider URL invalid",
-			err:  client.ErrInvalidOpenFeatureProviderURL,
-			cfg: &shared.ConfigImpl{
-				Str: map[shared.Variable[string]]string{
-					config.SERVER_OPENFEATURE_PROVIDER_NAME: "go-feature-flag",
-					config.SERVER_OPENFEATURE_PROVIDER_URL:  "http:/i\nvalid-url",
-				},
-			},
-		},
-	}
-
-	for _, tc := range testCases {
+	for _, tc := range TestSetOpenFeatureProviderTestCases {
 		t.Run(tc.name, func(t *testing.T) {
 			err := client.SetOpenFeatureProvider(tc.cfg)
 			if tc.err != nil {
