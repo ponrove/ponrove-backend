@@ -18,12 +18,12 @@ const (
 
 type api struct {
 	openfeatureClient *openfeature.Client
-	config            configuration.ServerConfig
+	config            configuration.UsersApiConfig
 }
 
 // NewAPI creates a new instance of the Users API with the provided OpenFeature client for configuration and feature
 // flag evaluation.
-func NewAPI(openfeatureClient *openfeature.Client, cfg configuration.ServerConfig) *api {
+func NewAPI(openfeatureClient *openfeature.Client, cfg configuration.UsersApiConfig) *api {
 	return &api{
 		openfeatureClient: openfeatureClient,
 		config:            cfg,
@@ -31,7 +31,7 @@ func NewAPI(openfeatureClient *openfeature.Client, cfg configuration.ServerConfi
 }
 
 // NewAPIHandler creates a new HTTP handler for the Users API using the provided OpenFeature client.
-func NewAPIHandler(openfeatureClient *openfeature.Client, cfg configuration.ServerConfig) http.Handler {
+func NewAPIHandler(openfeatureClient *openfeature.Client, cfg configuration.UsersApiConfig) http.Handler {
 	r := chi.NewRouter()
 	api := humachi.New(r, huma.DefaultConfig(APIName, APIVersion))
 	huma.AutoRegister(api, NewAPI(openfeatureClient, cfg))

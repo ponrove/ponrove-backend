@@ -33,7 +33,7 @@ func (suite *IngestionAPITestSuite) TestRootEndpointFeatureFlagTrue() {
 
 	srv := testserver.CreateServer(
 		testserver.WithMux(func() http.Handler {
-			return ingestion.NewAPIHandler(suite.openfeatureClient, configuration.ServerConfig{
+			return ingestion.NewAPIHandler(suite.openfeatureClient, configuration.IngestionApiConfig{
 				IngestionApiTestFlag: true,
 			})
 		}),
@@ -61,7 +61,7 @@ func (suite *IngestionAPITestSuite) TestRootEndpointFeatureFlagFalse() {
 
 	srv := testserver.CreateServer(
 		testserver.WithMux(func() http.Handler {
-			return ingestion.NewAPIHandler(suite.openfeatureClient, configuration.ServerConfig{
+			return ingestion.NewAPIHandler(suite.openfeatureClient, configuration.IngestionApiConfig{
 				IngestionApiTestFlag: false,
 			})
 		}),

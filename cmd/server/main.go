@@ -11,27 +11,20 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	gofeatureflag "github.com/open-feature/go-sdk-contrib/providers/go-feature-flag/pkg"
-	"github.com/open-feature/go-sdk/openfeature"
 	"github.com/ponrove/ponrove-backend/internal/pkg/configuration"
+	"github.com/ponrove/ponrove-backend/internal/pkg/configuration/flags"
 	"github.com/ponrove/ponrove-backend/internal/pkg/mux"
 )
 
 func main() {
 	var err error
 	cfg := configuration.New()
-	openfeature.SetProvider(openfeature.NoopProvider{})
-	if cfg.ServerOpenFeatureProviderURL != "" {
-		provider, err := gofeatureflag.NewProvider(
-			gofeatureflag.ProviderOptions{
-				Endpoint: cfg.ServerOpenFeatureProviderURL,
-			},
-		)
-		if err != nil {
-			log.Fatal().Err(err).Msg("Failed to initialize OpenFeature provider")
-		}
 
-		openfeature.SetProviderAndWait(provider)
+	// With configuration loaded, we can now set up the OpenFeature provider. If no provider is set, the openfeature
+	// default provider will be nooped, which fallbacks to environment variables and other defaults.
+	err = flags.SetOpenFeatureProvider(cfg)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to set openfeature provider")
 	}
 
 	// Add default logger to the context, which all http handlers derive their context (and logger) from.
@@ -52,19 +45,19 @@ func main() {
 
 	srvErr := make(chan error, 1)
 	go func() {
-		log.Info().Msgf("Starting server on %s", srv.Addr)
+		log.Info().Msgf("starting server on %s", srv.Addr)
 		srvErr <- srv.ListenAndServe()
 	}()
 
 	select {
 	case err = <-srvErr:
 		if err != nil && err != http.ErrServerClosed {
-			log.Error().Err(err).Msg("Server failed")
+			log.Error().Err(err).Msg("server failed")
 		} else {
-			log.Info().Msg("Server stopped gracefully")
+			log.Info().Msg("server stopped gracefully")
 		}
 	case <-serverCtx.Done():
-		log.Info().Msg("Shutting down server...")
+		log.Info().Msg("shutting down server...")
 		stop()
 	}
 
@@ -73,14 +66,14 @@ func main() {
 	go func() {
 		<-shutdownCtx.Done()
 		if shutdownCtx.Err() == context.DeadlineExceeded {
-			log.Warn().Msg("Shutdown context deadline exceeded, forcing shutdown")
+			log.Warn().Msg("shutdown context deadline exceeded, forcing shutdown")
 		}
 	}()
 
 	err = srv.Shutdown(shutdownCtx)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to shutdown server gracefully")
+		log.Error().Err(err).Msg("failed to shutdown server gracefully")
 	} else {
-		log.Info().Msg("Server shutdown gracefully")
+		log.Info().Msg("server shutdown gracefully")
 	}
 }

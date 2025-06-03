@@ -33,7 +33,7 @@ func (suite *OrganisationsAPITestSuite) TestRootEndpointFeatureFlagTrue() {
 
 	srv := testserver.CreateServer(
 		testserver.WithMux(func() http.Handler {
-			return organisations.NewAPIHandler(suite.openfeatureClient, configuration.ServerConfig{
+			return organisations.NewAPIHandler(suite.openfeatureClient, configuration.OrganisationsApiConfig{
 				OrganisationsApiTestFlag: true,
 			})
 		}),
@@ -61,7 +61,7 @@ func (suite *OrganisationsAPITestSuite) TestRootEndpointFeatureFlagFalse() {
 
 	srv := testserver.CreateServer(
 		testserver.WithMux(func() http.Handler {
-			return organisations.NewAPIHandler(suite.openfeatureClient, configuration.ServerConfig{
+			return organisations.NewAPIHandler(suite.openfeatureClient, configuration.OrganisationsApiConfig{
 				OrganisationsApiTestFlag: false,
 			})
 		}),

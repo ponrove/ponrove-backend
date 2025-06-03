@@ -29,15 +29,15 @@ func New(cfg configuration.ServerConfig) http.Handler {
 	openfeature.SetEvaluationContext(openfeature.NewEvaluationContext("general", map[string]any{}))
 
 	// Ingestion API will handle all requests related to data ingestion and processing from clients.
-	huma.AutoRegister(huma.NewGroup(api, "/api/ingestion"), ingestion.NewAPI(openfeatureClient, cfg))
+	huma.AutoRegister(huma.NewGroup(api, "/api/ingestion"), ingestion.NewAPI(openfeatureClient, cfg.IngestionApiConfig))
 
 	// Organisations API will handle all requests related to organisations, such as creating, updating,
 	// deleting, and retrieving organisation information.
-	huma.AutoRegister(huma.NewGroup(api, "/api/organisations"), organisations.NewAPI(openfeatureClient, cfg))
+	huma.AutoRegister(huma.NewGroup(api, "/api/organisations"), organisations.NewAPI(openfeatureClient, cfg.OrganisationsApiConfig))
 
 	// Users API will handle all requests related to user management, such as creating, updating,
 	// deleting, and retrieving user information.
-	huma.AutoRegister(huma.NewGroup(api, "/api/users"), users.NewAPI(openfeatureClient, cfg))
+	huma.AutoRegister(huma.NewGroup(api, "/api/users"), users.NewAPI(openfeatureClient, cfg.UsersApiConfig))
 
 	return r
 }
