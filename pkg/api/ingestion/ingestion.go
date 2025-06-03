@@ -20,7 +20,7 @@ type server struct {
 
 // Register creates a new instance of the Ingestion API.
 func Register(cfg shared.Config, api huma.API) error {
-	err := cfg.ConfigExists(
+	err := cfg.ConfigurationKeysRegistered(
 		INGESTION_API_TEST_FLAG,
 	)
 	if err != nil {

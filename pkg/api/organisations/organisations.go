@@ -20,7 +20,7 @@ type server struct {
 
 // Register creates a new instance of the Organisations API.
 func Register(cfg shared.Config, api huma.API) error {
-	err := cfg.ConfigExists(
+	err := cfg.ConfigurationKeysRegistered(
 		ORGANISATIONS_API_TEST_FLAG,
 	)
 	if err != nil {

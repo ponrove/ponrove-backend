@@ -11,7 +11,7 @@ type Config interface {
 	GetInt64(key Variable[int64]) int64
 	GetFloat64(key Variable[float64]) float64
 	GetBool(key Variable[bool]) bool
-	ConfigExists(keys ...any) error
+	ConfigurationKeysRegistered(keys ...any) error
 }
 
 type ConfigImpl struct {
@@ -49,14 +49,17 @@ func (c ConfigImpl) GetBool(key Variable[bool]) bool {
 	return false
 }
 
+// missingVariableError is an error type that holds a list of missing configuration variable keys.
 type missingVariableError struct {
 	Keys []string
 }
 
+// Error implements the error interface for missingVariableError.
 func (e missingVariableError) Error() string {
 	return "missing configuration variables: " + formatKeys(e.Keys)
 }
 
+// formatKeys formats the keys into a string for error messages. If no keys are provided, it returns "none".
 func formatKeys(keys []string) string {
 	if len(keys) == 0 {
 		return "none"
@@ -73,30 +76,31 @@ func formatKeys(keys []string) string {
 
 var _ error = (*missingVariableError)(nil)
 
-func (c ConfigImpl) ConfigExists(keys ...any) error {
+// checkKey checks if the provided key exists in the configuration. It uses type assertion to determine the type of the
+// key and checks the corresponding map in the configuration struct.
+func (c ConfigImpl) checkKey(key any) bool {
+	var exists bool
+	switch any(key).(type) {
+	case Variable[string]:
+		_, exists = c.Str[key.(Variable[string])]
+	case Variable[int64]:
+		_, exists = c.I64[key.(Variable[int64])]
+	case Variable[float64]:
+		_, exists = c.F64[key.(Variable[float64])]
+	case Variable[bool]:
+		_, exists = c.Bool[key.(Variable[bool])]
+	}
+
+	return exists
+}
+
+// ConfigurationKeysRegistered checks if all provided keys are registered in the configuration. To ensure that the
+// client of the package have taken all required keys into consideration when building the configuration object.
+func (c ConfigImpl) ConfigurationKeysRegistered(keys ...any) error {
 	var missingKeys []string
 	for _, key := range keys {
-		switch any(key).(type) {
-		case Variable[string]:
-			if _, exists := c.Str[key.(Variable[string])]; !exists {
-				missingKeys = append(missingKeys, string(key.(Variable[string])))
-				continue
-			}
-		case Variable[int64]:
-			if _, exists := c.I64[key.(Variable[int64])]; !exists {
-				missingKeys = append(missingKeys, string(key.(Variable[int64])))
-				continue
-			}
-		case Variable[float64]:
-			if _, exists := c.F64[key.(Variable[float64])]; !exists {
-				missingKeys = append(missingKeys, string(key.(Variable[float64])))
-				continue
-			}
-		case Variable[bool]:
-			if _, exists := c.Bool[key.(Variable[bool])]; !exists {
-				missingKeys = append(missingKeys, string(key.(Variable[bool])))
-				continue
-			}
+		if exists := c.checkKey(key); !exists {
+			missingKeys = append(missingKeys, string(key.(Variable[string])))
 		}
 	}
 
