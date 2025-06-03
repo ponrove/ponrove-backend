@@ -24,11 +24,19 @@ type server struct {
 }
 
 // Register creates a new instance of the Users API.
-func Register(cfg shared.Config, api huma.API) {
+func Register(cfg shared.Config, api huma.API) error {
+	err := cfg.ConfigExists(
+		USERS_API_TEST_FLAG,
+	)
+	if err != nil {
+		return err
+	}
+
 	huma.AutoRegister(huma.NewGroup(api, "/api/users"), &server{
 		openfeatureClient: openfeature.NewClient("users-api"),
 		config:            cfg,
 	})
+	return nil
 }
 
 type (

@@ -9,8 +9,19 @@ import (
 )
 
 // Register initializes and registers all API endpoints with the provided Huma API instance.
-func Register(cfg shared.Config, api huma.API) {
-	ingestion.Register(cfg, api)
-	organisations.Register(cfg, api)
-	users.Register(cfg, api)
+func Register(cfg shared.Config, api huma.API) error {
+	var err error
+	err = ingestion.Register(cfg, api)
+	if err != nil {
+		return err
+	}
+	err = organisations.Register(cfg, api)
+	if err != nil {
+		return err
+	}
+	err = users.Register(cfg, api)
+	if err != nil {
+		return err
+	}
+	return nil
 }

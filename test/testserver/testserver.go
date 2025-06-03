@@ -19,7 +19,7 @@ import (
 type testServerConfig struct {
 	captureLog    io.Writer
 	serviceConfig shared.Config
-	apiPackages   []func(config shared.Config, api huma.API)
+	apiPackages   []func(config shared.Config, api huma.API) error
 }
 
 // Option is a function that modifies the server configuration.
@@ -35,10 +35,10 @@ func CaptureLogToWriter(w io.Writer) Option {
 
 // WithConfig allows the caller to pass in a custom configuration for the server. This is useful for testing with
 // specific apis enabled.
-func WithAPI(api func(config shared.Config, api huma.API)) Option {
+func WithAPI(api func(config shared.Config, api huma.API) error) Option {
 	return func(cfg *testServerConfig) {
 		if cfg.apiPackages == nil {
-			cfg.apiPackages = []func(config shared.Config, api huma.API){} // Ensure api is initialized to an empty slice if not provided
+			cfg.apiPackages = []func(config shared.Config, api huma.API) error{} // Ensure api is initialized to an empty slice if not provided
 		}
 		cfg.apiPackages = append(cfg.apiPackages, api)
 	}
@@ -85,7 +85,11 @@ func CreateServer(opts ...Option) *httptest.Server {
 
 	// If API packages are provided, register them with the Huma API instance.
 	for _, apiPackage := range cfg.apiPackages {
-		apiPackage(cfg.serviceConfig, h)
+		err := apiPackage(cfg.serviceConfig, h)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to register API package")
+			return nil // Return nil if there is an error registering the API package
+		}
 	}
 
 	// Start a test server with the application router

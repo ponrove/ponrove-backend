@@ -26,7 +26,10 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to set openfeature provider")
 	}
 
-	r := router.New(cfg)
+	r, err := router.New(cfg)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to create router")
+	}
 
 	// Add default logger to the context, which all http handlers derive their context (and logger) from.
 	serverCtx := log.Logger.WithContext(context.Background())
