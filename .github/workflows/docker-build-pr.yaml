@@ -52,7 +52,7 @@ jobs:
         with:
           push: false # Temporary
           context: .
-          file: ./build/Dockerfile.${{ matrix.binary }}
+          file: ./build/docker/Dockerfile.${{ matrix.binary }}
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
