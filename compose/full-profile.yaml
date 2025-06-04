@@ -1,0 +1,18 @@
+include:
+  - openfeature-service.yaml
+services:
+  backend-server:
+    build:
+      context: ../
+      dockerfile: ./build/docker/Dockerfile.server
+    extends:
+      file: extend-backend-env.yaml
+      service: backend-environment
+    ports:
+      - 8080:8080
+    depends_on:
+      - openfeature-server
+    links:
+      - openfeature-server
+    profiles:
+      - full

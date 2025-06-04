@@ -1,0 +1,7 @@
+services:
+  backend-environment:
+    environment:
+      - "SERVER_OPENFEATURE_PROVIDER_URL=http://openfeature-server:1031"
+      - "SERVER_PORT=8080"
+      - "SERVER_REQUEST_TIMEOUT=30"
+      - "SERVER_SHUTDOWN_TIMEOUT=10"
