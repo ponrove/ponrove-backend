@@ -1,4 +1,4 @@
-package organisations
+package hub
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	ORGANISATIONS_API_TEST_FLAG configura.Variable[bool] = "ORGANISATIONS_API_TEST_FLAG" // Bootstrap flag, will become obsolete
+	HUB_API_TEST_FLAG configura.Variable[bool] = "HUB_API_TEST_FLAG" // Bootstrap flag, will become obsolete
 )
 
 type server struct {
@@ -19,16 +19,16 @@ type server struct {
 	config            configura.Config
 }
 
-// Register creates a new instance of the Organisations API.
+// Register creates a new instance of the Hub API.
 func Register(cfg configura.Config, api huma.API) error {
 	err := cfg.ConfigurationKeysRegistered(
-		ORGANISATIONS_API_TEST_FLAG,
+		HUB_API_TEST_FLAG,
 	)
 	if err != nil {
 		return err
 	}
-	huma.AutoRegister(huma.NewGroup(api, "/api/organisations"), &server{
-		openfeatureClient: openfeature.NewClient("organisations-api"),
+	huma.AutoRegister(huma.NewGroup(api, "/api/hub"), &server{
+		openfeatureClient: openfeature.NewClient("hub-api"),
 		config:            cfg,
 	})
 	return err
@@ -50,12 +50,12 @@ type (
 // Bootstrap endpoint for foundational logic, this will become obsolete.
 func (a *server) RegisterRootEndpoint(api huma.API) {
 	huma.Register(api, huma.Operation{
-		OperationID: "OrganisationsRoot",
+		OperationID: "HubRoot",
 		Method:      http.MethodGet,
 		Path:        "/",
-		Tags:        []string{"Organisations"},
+		Tags:        []string{"Hub"},
 	}, func(ctx context.Context, i *RootEndpointRequest) (*RootEndpointResponse, error) {
-		testflag, err := a.openfeatureClient.BooleanValue(ctx, "test-flag", a.config.Bool(ORGANISATIONS_API_TEST_FLAG), openfeature.EvaluationContext{})
+		testflag, err := a.openfeatureClient.BooleanValue(ctx, "test-flag", a.config.Bool(HUB_API_TEST_FLAG), openfeature.EvaluationContext{})
 		if err != nil {
 			return nil, err
 		}
@@ -65,7 +65,7 @@ func (a *server) RegisterRootEndpoint(api huma.API) {
 				Message         string `json:"message"`
 				TestFeatureFlag bool   `json:"test_feature_flag"`
 			}{
-				Message:         "Organisations API root endpoint.",
+				Message:         "Hub API root endpoint.",
 				TestFeatureFlag: testflag,
 			},
 		}, nil

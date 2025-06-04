@@ -17,30 +17,15 @@ services:
       - openfeature-server
     profiles:
       - modular
-  backend-organisations:
+  backend-hub:
     build:
       context: ../
-      dockerfile: ./build/docker/Dockerfile.organisations
+      dockerfile: ./build/docker/Dockerfile.hub
     extends:
       file: extend-backend-env.yaml
       service: backend-environment
     ports:
       - 8081:8080
-    depends_on:
-      - openfeature-server
-    links:
-      - openfeature-server
-    profiles:
-      - modular
-  backend-users:
-    build:
-      context: ../
-      dockerfile: ./build/docker/Dockerfile.users
-    extends:
-      file: extend-backend-env.yaml
-      service: backend-environment
-    ports:
-      - 8082:8080
     depends_on:
       - openfeature-server
     links:

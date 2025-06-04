@@ -3,7 +3,7 @@ WORKDIR /workspace
 ENV CGO_ENABLED=0
 ENV GOOS=linux
 COPY . .
-RUN go build -a -installsuffix cgo -o runtime_binary ./cmd/users
+RUN go build -a -installsuffix cgo -o runtime_binary ./cmd/hub
 
 # Production stage
 FROM scratch
