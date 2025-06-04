@@ -1,6 +1,5 @@
 name: Docker Build Ingestion API module
 on:
-  pull_request:
   push:
     branches:
       - main
@@ -113,7 +112,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY_IMAGE }}
           flavor: |
-            suffix=-hub
+            suffix=-ingestion
           tags: |
             type=edge,branch=main
             type=ref,event=pr

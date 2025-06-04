@@ -1,6 +1,5 @@
 name: Docker Build Hub API module
 on:
-  pull_request:
   push:
     branches:
       - main
