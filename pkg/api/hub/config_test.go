@@ -1,4 +1,4 @@
-package organisations_test
+package hub_test
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/ponrove/configura"
 	"github.com/ponrove/ponrove-backend/internal/config"
-	"github.com/ponrove/ponrove-backend/pkg/api/organisations"
+	"github.com/ponrove/ponrove-backend/pkg/api/hub"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,11 +17,11 @@ func TestRequiredConfiguration(t *testing.T) {
 	t.Parallel()
 
 	cfg := config.New()
-	err := organisations.Register(cfg, humachi.New(chi.NewRouter(), huma.DefaultConfig("", "")))
+	err := hub.Register(cfg, humachi.New(chi.NewRouter(), huma.DefaultConfig("", "")))
 	assert.NoError(t, err, "failed to register users API")
 
 	cleanCfg := configura.NewConfigImpl()
-	err = organisations.Register(cleanCfg, humachi.New(chi.NewRouter(), huma.DefaultConfig("", "")))
+	err = hub.Register(cleanCfg, humachi.New(chi.NewRouter(), huma.DefaultConfig("", "")))
 	assert.Error(t, err, "expected error when registering users API with empty configuration")
 	assert.ErrorIs(t, err, configura.ErrMissingVariable)
 }

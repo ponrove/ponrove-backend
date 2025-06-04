@@ -2,9 +2,8 @@ package config
 
 import (
 	"github.com/ponrove/configura"
+	"github.com/ponrove/ponrove-backend/pkg/api/hub"
 	"github.com/ponrove/ponrove-backend/pkg/api/ingestion"
-	"github.com/ponrove/ponrove-backend/pkg/api/organisations"
-	"github.com/ponrove/ponrove-backend/pkg/api/users"
 )
 
 const (
@@ -28,8 +27,7 @@ func New() configura.Config {
 		configura.LoadEnvironment(serverConfigInstance, SERVER_REQUEST_TIMEOUT, int64(30))
 		configura.LoadEnvironment(serverConfigInstance, SERVER_SHUTDOWN_TIMEOUT, int64(10))
 		configura.LoadEnvironment(serverConfigInstance, ingestion.INGESTION_API_TEST_FLAG, false)
-		configura.LoadEnvironment(serverConfigInstance, organisations.ORGANISATIONS_API_TEST_FLAG, false)
-		configura.LoadEnvironment(serverConfigInstance, users.USERS_API_TEST_FLAG, false)
+		configura.LoadEnvironment(serverConfigInstance, hub.HUB_API_TEST_FLAG, false)
 	}
 
 	return *serverConfigInstance

@@ -1,0 +1,130 @@
+name: Docker Build Hub API module
+on:
+  push:
+    branches:
+      - main
+  release:
+    types: [published]
+
+env:
+  REGISTRY_IMAGE: rg.fr-par.scw.cloud/${{ github.repository_owner }}/${{ github.event.repository.name }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/386
+          - linux/amd64
+          - linux/arm64
+          - linux/arm/v7
+          - linux/arm/v8
+          - linux/ppc64le
+
+    steps:
+      - uses: actions/checkout@85e6279cec87321a52edac9c87bce653a07cf6c2
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@418e4b98bf2841bd337d0b24fe63cb36dc8afa55
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          annotations: |
+            org.opencontainers.image.created=${{ github.event.release.published_at || github.event.head_commit.timestamp }}
+            org.opencontainers.image.authors="Ponrove Team <https://ponrove.com/contact>"
+            org.opencontainers.image.url="https://rg.fr-par.scw.cloud/${{ github.repository_owner }}/${{ github.event.repository.name }}"
+            org.opencontainers.image.source="https://github.com/ponrove/${{ github.event.repository.name }}"
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.vendor="Ponrove"
+            org.opencontainers.image.licenses="APGL-3.0"
+            org.opencontainers.image.description="Ponrove Backend Hub API module for ${matrix.platform}"
+            org.opencontainers.image.title="Ponrove Backend Hub API module"
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@6d4b68b490aef8836e8fb5e50ee7b3bdfa5894f0
+        with:
+          registry: rg.fr-par.scw.cloud/ponrove
+          username: ${{ secrets.SCW_ACCESS_KEY_ID }}
+          password: ${{ secrets.SCW_SECRET_KEY }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@737ba1e397ec2caff0d098f75e1136f9a926dc0a
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@3f1544eb9eff0b4d4d279b33f704a06fcf8d0e43
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+        with:
+          context: .
+          file: ./build/docker/Dockerfile.hub
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.REGISTRY_IMAGE }}
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@6027e3dd177782cd8ab9af838c04fd81a07f1d47
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@6d4b68b490aef8836e8fb5e50ee7b3bdfa5894f0
+        with:
+          registry: rg.fr-par.scw.cloud/ponrove
+          username: ${{ secrets.SCW_ACCESS_KEY_ID }}
+          password: ${{ secrets.SCW_SECRET_KEY }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@3f1544eb9eff0b4d4d279b33f704a06fcf8d0e43
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@418e4b98bf2841bd337d0b24fe63cb36dc8afa55
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          flavor: |
+            suffix=-hub
+          tags: |
+            type=edge,branch=main
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}.{{minor}}.{{patch}}
+
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+
+      - name: Inspect image
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}

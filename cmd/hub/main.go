@@ -6,7 +6,7 @@ import (
 	"github.com/ponrove/ponrove-backend/internal/client"
 	"github.com/ponrove/ponrove-backend/internal/config"
 	"github.com/ponrove/ponrove-backend/internal/runtime"
-	"github.com/ponrove/ponrove-backend/pkg/api/users"
+	"github.com/ponrove/ponrove-backend/pkg/api/hub"
 	"github.com/rs/zerolog/log"
 )
 
@@ -25,7 +25,7 @@ func main() {
 	ctx := log.Logger.WithContext(context.Background())
 
 	// Start the runtime with the provided configuration and API bundles.
-	err = runtime.Runtime(ctx, cfg, users.Register)
+	err = runtime.Runtime(ctx, cfg, hub.Register)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to start runtime")
 	}
