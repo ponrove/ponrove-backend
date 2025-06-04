@@ -1,12 +1,12 @@
-package runtime
+package config
 
 import (
-	"github.com/ponrove/ponrove-backend/pkg/api"
 	"github.com/ponrove/ponrove-backend/pkg/api/hub"
 	"github.com/ponrove/ponrove-backend/pkg/api/ingestion"
+	"github.com/ponrove/ponrunner"
 )
 
-var DefaultAPIBundles = []api.APIBundle{
+var DefaultAPIBundles = []ponrunner.APIBundle{
 	ingestion.Register,
 	hub.Register,
 }
