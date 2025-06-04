@@ -24,7 +24,7 @@ jobs:
           - linux/ppc64le
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@85e6279cec87321a52edac9c87bce653a07cf6c2
       - name: Prepare
         run: |
           platform=${{ matrix.platform }}
