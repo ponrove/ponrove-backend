@@ -40,14 +40,12 @@ func SetOpenFeatureProvider(cfg configura.Config) error {
 	var provider openfeature.FeatureProvider
 	switch cfg.String(config.SERVER_OPENFEATURE_PROVIDER_NAME) {
 	case "go-feature-flag":
-		provider, err = gofeatureflag.NewProvider(
+		// Currently, error can only occur if the URL is empty, which is handled above. Surpress the error here.
+		provider, _ = gofeatureflag.NewProvider(
 			gofeatureflag.ProviderOptions{
 				Endpoint: cfg.String(config.SERVER_OPENFEATURE_PROVIDER_URL),
 			},
 		)
-		if err != nil {
-			return err
-		}
 	default:
 		return fmt.Errorf("%w: %s", ErrUnsupportedOpenFeatureProvider, cfg.String(config.SERVER_OPENFEATURE_PROVIDER_NAME))
 	}

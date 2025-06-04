@@ -72,6 +72,16 @@ var TestSetOpenFeatureProviderTestCases = []TestSetOpenFeatureProviderTestCase{
 			},
 		},
 	},
+	{
+		name: "Unsupported OpenFeature Provider",
+		err:  client.ErrUnsupportedOpenFeatureProvider,
+		cfg: &configura.ConfigImpl{
+			RegString: map[configura.Variable[string]]string{
+				config.SERVER_OPENFEATURE_PROVIDER_NAME: "unknown-provider-name",
+				config.SERVER_OPENFEATURE_PROVIDER_URL:  "http://custom-provider.example.com",
+			},
+		},
+	},
 }
 
 // TestSetOpenFeatureProvider tests the SetOpenFeatureProvider function to ensure it correctly sets the OpenFeature
