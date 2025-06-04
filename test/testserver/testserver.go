@@ -10,8 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/ponrove/configura"
 	"github.com/ponrove/ponrove-backend/internal/config"
-	"github.com/ponrove/ponrove-backend/internal/runtime"
-	"github.com/ponrove/ponrove-backend/pkg/api"
+	"github.com/ponrove/ponrunner"
 	"github.com/rs/zerolog/log"
 )
 
@@ -20,7 +19,7 @@ import (
 type testServerConfig struct {
 	captureLog    io.Writer
 	serviceConfig configura.Config
-	apiBundles    []api.APIBundle
+	apiBundles    []ponrunner.APIBundle
 }
 
 // Option is a function that modifies the server configuration.
@@ -36,10 +35,10 @@ func CaptureLogToWriter(w io.Writer) Option {
 
 // WithAPIBundle allows the caller to pass in a custom API bundle to the server. If one API bundle is provided, it will
 // overwrite the default API bundles. If multiple API bundles are provided, they will be appended.
-func WithAPIBundle(bundle api.APIBundle) Option {
+func WithAPIBundle(bundle ponrunner.APIBundle) Option {
 	return func(cfg *testServerConfig) {
 		if cfg.apiBundles == nil {
-			cfg.apiBundles = []api.APIBundle{} // Ensure api is initialized to an empty slice if not provided
+			cfg.apiBundles = []ponrunner.APIBundle{} // Ensure api is initialized to an empty slice if not provided
 		}
 		cfg.apiBundles = append(cfg.apiBundles, bundle)
 	}
@@ -69,7 +68,7 @@ func CreateServer(opts ...Option) (*httptest.Server, error) {
 
 	// If no bundles are provided, use the default API bundles.
 	if cfg.apiBundles == nil {
-		cfg.apiBundles = runtime.DefaultAPIBundles
+		cfg.apiBundles = config.DefaultAPIBundles
 	}
 
 	// Hook up a middleware that captures the log output from the request, if provided through the options.
@@ -92,7 +91,7 @@ func CreateServer(opts ...Option) (*httptest.Server, error) {
 	h := humachi.New(r, huma.DefaultConfig("Ponrove Backend API", "1.0.0"))
 
 	// If API packages are provided, register them with the Huma API instance.
-	api.RegisterAPIBundles(cfg.serviceConfig, h, cfg.apiBundles...)
+	ponrunner.RegisterAPIBundles(cfg.serviceConfig, h, cfg.apiBundles...)
 
 	// Start a test server with the application router
 	return httptest.NewServer(r), nil

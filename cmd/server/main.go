@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/ponrove/ponrove-backend/internal/client"
 	"github.com/ponrove/ponrove-backend/internal/config"
-	"github.com/ponrove/ponrove-backend/internal/runtime"
+	"github.com/ponrove/ponrunner"
 	"github.com/rs/zerolog/log"
 )
 
@@ -23,8 +24,10 @@ func main() {
 	// Add default logger to the context, which all http handlers derive their context (and logger) from.
 	ctx := log.Logger.WithContext(context.Background())
 
+	router := chi.NewRouter()
+
 	// Start the runtime with the provided configuration and API bundles.
-	err = runtime.Runtime(ctx, cfg, runtime.DefaultAPIBundles...)
+	err = ponrunner.Start(ctx, cfg, router, config.DefaultAPIBundles...)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to start runtime")
 	}

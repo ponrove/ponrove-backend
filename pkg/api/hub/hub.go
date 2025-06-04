@@ -7,7 +7,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/open-feature/go-sdk/openfeature"
 	"github.com/ponrove/configura"
-	"github.com/ponrove/ponrove-backend/pkg/api"
+	"github.com/ponrove/ponrunner"
 )
 
 const (
@@ -34,7 +34,7 @@ func Register(cfg configura.Config, api huma.API) error {
 	return err
 }
 
-var _ api.APIBundle = Register
+var _ ponrunner.APIBundle = Register
 
 type (
 	RootEndpointRequest  struct{}
