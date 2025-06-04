@@ -7,8 +7,8 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
 	"github.com/ponrove/configura"
-	"github.com/ponrove/ponrove-backend/internal/config"
 	"github.com/ponrove/ponrove-backend/pkg/api/hub"
+	"github.com/ponrove/ponrove-backend/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -8,7 +8,7 @@ import (
 	gofeatureflag "github.com/open-feature/go-sdk-contrib/providers/go-feature-flag/pkg"
 	"github.com/open-feature/go-sdk/openfeature"
 	"github.com/ponrove/configura"
-	"github.com/ponrove/ponrove-backend/internal/config"
+	"github.com/ponrove/ponrove-backend/pkg/config"
 )
 
 var (

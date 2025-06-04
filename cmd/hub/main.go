@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/ponrove/ponrove-backend/internal/client"
-	"github.com/ponrove/ponrove-backend/internal/config"
 	"github.com/ponrove/ponrove-backend/pkg/api/hub"
+	"github.com/ponrove/ponrove-backend/pkg/config"
 	"github.com/ponrove/ponrunner"
 	"github.com/rs/zerolog/log"
 )
