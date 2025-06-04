@@ -92,7 +92,6 @@ func Runtime(ctx context.Context, cfg configura.Config, bundles ...api.APIBundle
 		// It returns http.ErrServerClosed if Shutdown is called successfully.
 		lsErr := srv.ListenAndServe()
 		if lsErr != nil && lsErr != http.ErrServerClosed {
-			log.Error().Err(lsErr).Msg("listenAndServe failed with an unexpected error")
 			srvListenAndServeErrChan <- lsErr
 		} else {
 			// If http.ErrServerClosed or nil, server stopped as expected.

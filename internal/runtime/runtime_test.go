@@ -3,12 +3,20 @@ package runtime
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/ponrove/configura"
+	"github.com/ponrove/ponrove-backend/internal/config" // For config keys
+	"github.com/ponrove/ponrove-backend/pkg/api/ingestion"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // MockServerControl is a mock type for the serverControl interface
@@ -145,4 +153,121 @@ func TestHandleShutdown_ZeroShutdownTimeout(t *testing.T) {
 	// Expect DeadlineExceeded because WithTimeout(parent, 0) results in a context that is immediately done with DeadlineExceeded.
 	assert.True(t, errors.Is(err, context.DeadlineExceeded), "Expected context.DeadlineExceeded for zero timeout, got %v", err)
 	mockSrv.AssertExpectations(t)
+}
+
+// Helper function to get a free port
+func getFreePort() (int, error) {
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return 0, err
+	}
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return 0, err
+	}
+	defer l.Close()
+	return l.Addr().(*net.TCPAddr).Port, nil
+}
+
+func TestRuntime_SuccessfulShutdown(t *testing.T) {
+	t.Parallel()
+
+	mockCfg := configura.NewConfigImpl()
+	freePort, err := getFreePort()
+	require.NoError(t, err, "Failed to get free port")
+
+	mockCfg.RegInt64[config.SERVER_PORT] = int64(freePort) // Use a free port
+	// Short timeouts for test speed, but long enough for operations.
+	mockCfg.RegInt64[config.SERVER_REQUEST_TIMEOUT] = 1  // 1 second request timeout
+	mockCfg.RegInt64[config.SERVER_SHUTDOWN_TIMEOUT] = 1 // 1 second shutdown timeout
+
+	ctx, cancel := context.WithCancel(context.Background())
+	runtimeErrChan := make(chan error, 1)
+
+	go func() {
+		// We expect Runtime to return nil on successful graceful shutdown.
+		runtimeErrChan <- Runtime(ctx, mockCfg)
+	}()
+
+	// Wait for the server to start by trying to connect
+	serverAddr := fmt.Sprintf("localhost:%d", freePort)
+	connectionSuccessful := false
+	for i := 0; i < 40; i++ { // Retry for up to 2 seconds
+		conn, dialErr := net.DialTimeout("tcp", serverAddr, 50*time.Millisecond)
+		if dialErr == nil {
+			conn.Close()
+			connectionSuccessful = true
+			break
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	require.True(t, connectionSuccessful, "Server did not start listening on %s", serverAddr)
+
+	// Simulate a shutdown signal by cancelling the context
+	cancel()
+
+	// Wait for Runtime to exit
+	select {
+	case err := <-runtimeErrChan:
+		// On graceful shutdown triggered by context cancellation, Runtime should return nil.
+		// http.ErrServerClosed is handled internally.
+		assert.NoError(t, err, "Runtime should exit gracefully without error")
+	case <-time.After(3 * time.Second): // Generous timeout for shutdown
+		t.Fatal("Runtime did not exit after context cancellation")
+	}
+}
+
+func TestRuntime_ListenAndServeFails(t *testing.T) {
+	t.Parallel()
+
+	// Create a listener to occupy a port
+	listener, err := net.Listen("tcp", ":0")
+	require.NoError(t, err, "Failed to create a listener for busy port")
+	busyPort := listener.Addr().(*net.TCPAddr).Port
+	defer listener.Close() // Keep the port busy for the duration of the test
+
+	log.Debug().Msgf("port: %v", busyPort)
+
+	mockCfg := configura.NewConfigImpl()
+	mockCfg.RegInt64[config.SERVER_PORT] = int64(busyPort) // Use a free port
+	// Short timeouts for test speed, but long enough for operations.
+	mockCfg.RegInt64[config.SERVER_REQUEST_TIMEOUT] = 1  // 1 second request timeout
+	mockCfg.RegInt64[config.SERVER_SHUTDOWN_TIMEOUT] = 1 // 1 second shutdown timeout
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second) // Test timeout
+	defer cancel()
+
+	runErr := Runtime(ctx, mockCfg)
+
+	assert.Error(t, runErr, "Runtime should return an error if ListenAndServe fails")
+	// Check if the error is a bind error (OS-dependent message)
+	// Example: "bind: address already in use" or "listen tcp :<port>: bind: address already in use"
+	// net.OpError is common for such issues.
+	var opError *net.OpError
+	if errors.As(runErr, &opError) {
+		assert.Contains(t, strings.ToLower(opError.Err.Error()), "address already in use", "Error message should indicate address in use")
+	} else {
+		t.Logf("ListenAndServe failed with: %v (type: %T), expected a net.OpError related to binding", runErr, runErr)
+		// Fallback to a general check if not OpError but still an error
+		assert.Contains(t, strings.ToLower(runErr.Error()), "bind", "Error message should be related to bind failure")
+	}
+}
+
+func TestRuntime_APIBundleRegistrationFails(t *testing.T) {
+	t.Parallel()
+
+	mockCfg := configura.NewConfigImpl()
+	freePort, err := getFreePort()
+	require.NoError(t, err, "Failed to get free port")
+
+	mockCfg.RegInt64[config.SERVER_PORT] = int64(freePort) // Use a free port
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second) // Test timeout
+	defer cancel()
+
+	// ingestion.Register without required configuration should fail
+	runErr := Runtime(ctx, mockCfg, ingestion.Register)
+
+	assert.Error(t, runErr)
+	assert.True(t, errors.Is(runErr, configura.ErrMissingVariable), "Runtime should return the error from API bundle registration. Got: %v", runErr)
 }
