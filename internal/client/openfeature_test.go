@@ -6,7 +6,7 @@ import (
 	"github.com/open-feature/go-sdk/openfeature"
 	"github.com/ponrove/configura"
 	"github.com/ponrove/ponrove-backend/internal/client"
-	"github.com/ponrove/ponrove-backend/internal/config"
+	"github.com/ponrove/ponrove-backend/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 
