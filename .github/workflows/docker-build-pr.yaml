@@ -51,7 +51,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: false # Temporary
-          dockerfile: ./build/Dockerfile.${{ matrix.binary }}
+          context: .
+          file: ./build/Dockerfile.${{ matrix.binary }}
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
