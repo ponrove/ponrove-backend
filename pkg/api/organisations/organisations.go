@@ -5,39 +5,36 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/danielgtaylor/huma/v2/adapters/humachi"
-	"github.com/go-chi/chi/v5"
 	"github.com/open-feature/go-sdk/openfeature"
-	"github.com/ponrove/ponrove-backend/internal/pkg/configuration"
+	"github.com/ponrove/configura"
+	"github.com/ponrove/ponrove-backend/pkg/api"
 )
 
 const (
-	APIVersion = "1.0.0"
-	APIName    = "Organisations API"
+	ORGANISATIONS_API_TEST_FLAG configura.Variable[bool] = "ORGANISATIONS_API_TEST_FLAG" // Bootstrap flag, will become obsolete
 )
 
-type api struct {
+type server struct {
 	openfeatureClient *openfeature.Client
-	config            configuration.ServerConfig
+	config            configura.Config
 }
 
-// NewAPI creates a new instance of the Organisations API with the provided OpenFeature client for configuration and
-// feature flag evaluation.
-func NewAPI(openfeatureClient *openfeature.Client, cfg configuration.ServerConfig) *api {
-	return &api{
-		openfeatureClient: openfeatureClient,
-		config:            cfg,
+// Register creates a new instance of the Organisations API.
+func Register(cfg configura.Config, api huma.API) error {
+	err := cfg.ConfigurationKeysRegistered(
+		ORGANISATIONS_API_TEST_FLAG,
+	)
+	if err != nil {
+		return err
 	}
+	huma.AutoRegister(huma.NewGroup(api, "/api/organisations"), &server{
+		openfeatureClient: openfeature.NewClient("organisations-api"),
+		config:            cfg,
+	})
+	return err
 }
 
-// NewAPIHandler creates a new HTTP handler for the Organisations API using the provided OpenFeature client.
-func NewAPIHandler(openfeatureClient *openfeature.Client, cfg configuration.ServerConfig) http.Handler {
-	r := chi.NewRouter()
-	api := humachi.New(r, huma.DefaultConfig(APIName, APIVersion))
-	huma.AutoRegister(api, NewAPI(openfeatureClient, cfg))
-
-	return r
-}
+var _ api.APIBundle = Register
 
 type (
 	RootEndpointRequest  struct{}
@@ -51,14 +48,14 @@ type (
 )
 
 // Bootstrap endpoint for foundational logic, this will become obsolete.
-func (a *api) RegisterRootEndpoint(api huma.API) {
+func (a *server) RegisterRootEndpoint(api huma.API) {
 	huma.Register(api, huma.Operation{
 		OperationID: "OrganisationsRoot",
 		Method:      http.MethodGet,
 		Path:        "/",
 		Tags:        []string{"Organisations"},
 	}, func(ctx context.Context, i *RootEndpointRequest) (*RootEndpointResponse, error) {
-		testflag, err := a.openfeatureClient.BooleanValue(ctx, "test-flag", a.config.OrganisationsApiTestFlag, openfeature.EvaluationContext{})
+		testflag, err := a.openfeatureClient.BooleanValue(ctx, "test-flag", a.config.Bool(ORGANISATIONS_API_TEST_FLAG), openfeature.EvaluationContext{})
 		if err != nil {
 			return nil, err
 		}

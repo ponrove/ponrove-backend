@@ -5,8 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/open-feature/go-sdk/openfeature"
-	"github.com/ponrove/ponrove-backend/internal/pkg/configuration"
+	"github.com/ponrove/configura"
 	"github.com/ponrove/ponrove-backend/pkg/api/ingestion"
 	"github.com/ponrove/ponrove-backend/test/testserver"
 	"github.com/stretchr/testify/suite"
@@ -14,13 +13,6 @@ import (
 
 type IngestionAPITestSuite struct {
 	suite.Suite
-	openfeatureClient *openfeature.Client
-}
-
-func (suite *IngestionAPITestSuite) SetupTest() {
-	// Initialize the OpenFeature client with a Noop provider for testing.
-	openfeature.SetProvider(openfeature.NoopProvider{})
-	suite.openfeatureClient = openfeature.NewClient("ingestion-test-client")
 }
 
 // Bootstrap Test for foundational logic, this will become obsolete.
@@ -31,16 +23,17 @@ func (suite *IngestionAPITestSuite) TestRootEndpointFeatureFlagTrue() {
 		TestFeatureFlag bool   `json:"test_feature_flag"`
 	}
 
-	srv := testserver.CreateServer(
-		testserver.WithMux(func() http.Handler {
-			return ingestion.NewAPIHandler(suite.openfeatureClient, configuration.ServerConfig{
-				IngestionApiTestFlag: true,
-			})
-		}),
+	cfg := configura.NewConfigImpl()
+	cfg.RegBool[ingestion.INGESTION_API_TEST_FLAG] = true
+
+	srv, err := testserver.CreateServer(
+		testserver.WithConfig(cfg),
+		testserver.WithAPIBundle(ingestion.Register),
 	)
+	suite.NoError(err)
 	defer srv.Close()
 
-	resp, err := http.Get(srv.URL)
+	resp, err := http.Get(srv.URL + "/api/ingestion/")
 	suite.NoError(err)
 	defer resp.Body.Close()
 	suite.Equal(http.StatusOK, resp.StatusCode)
@@ -58,16 +51,16 @@ func (suite *IngestionAPITestSuite) TestRootEndpointFeatureFlagFalse() {
 		Message         string `json:"message"`
 		TestFeatureFlag bool   `json:"test_feature_flag"`
 	}
+	cfg := configura.NewConfigImpl()
+	cfg.RegBool[ingestion.INGESTION_API_TEST_FLAG] = false
 
-	srv := testserver.CreateServer(
-		testserver.WithMux(func() http.Handler {
-			return ingestion.NewAPIHandler(suite.openfeatureClient, configuration.ServerConfig{
-				IngestionApiTestFlag: false,
-			})
-		}),
+	srv, err := testserver.CreateServer(
+		testserver.WithConfig(cfg),
+		testserver.WithAPIBundle(ingestion.Register),
 	)
+	suite.NoError(err)
 	defer srv.Close()
-	resp, err := http.Get(srv.URL)
+	resp, err := http.Get(srv.URL + "/api/ingestion/")
 	suite.NoError(err)
 	defer resp.Body.Close()
 	suite.Equal(http.StatusOK, resp.StatusCode)

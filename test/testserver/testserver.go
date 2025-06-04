@@ -5,51 +5,72 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
+	"github.com/ponrove/configura"
+	"github.com/ponrove/ponrove-backend/internal/config"
+	"github.com/ponrove/ponrove-backend/internal/runtime"
+	"github.com/ponrove/ponrove-backend/pkg/api"
 	"github.com/rs/zerolog/log"
 )
 
-// serverConfig is a configuration struct that holds the options for the test server, and apply them after potential
+// testServerConfig is a configuration struct that holds the options for the test server, and apply them after potential
 // modifications from the Option functions.
-type serverConfig struct {
-	captureLog io.Writer
-	mux        http.Handler
+type testServerConfig struct {
+	captureLog    io.Writer
+	serviceConfig configura.Config
+	apiBundles    []api.APIBundle
 }
 
 // Option is a function that modifies the server configuration.
-type Option func(*serverConfig)
+type Option func(*testServerConfig)
 
 // CaptureLogToWriter is an option that allows the caller to capture the log output from the server to a writer. This is
 // useful for testing the log output of the server inside the tests, if needed.
 func CaptureLogToWriter(w io.Writer) Option {
-	return func(cfg *serverConfig) {
+	return func(cfg *testServerConfig) {
 		cfg.captureLog = w
 	}
 }
 
-// WithMux allows the caller to provide a custom HTTP handler (mux) for the server. This is useful for testing specific
-// routes or behaviors without having to set up the entire application context. If no handler is provided, it defaults
-// to a NotFound handler.
-func WithMux(handler func() http.Handler) Option {
-	return func(cfg *serverConfig) {
-		if handler != nil {
-			cfg.mux = handler()
-		} else {
-			cfg.mux = http.NotFoundHandler() // Default to a NotFound handler if no handler is provided
+// WithAPIBundle allows the caller to pass in a custom API bundle to the server. If one API bundle is provided, it will
+// overwrite the default API bundles. If multiple API bundles are provided, they will be appended.
+func WithAPIBundle(bundle api.APIBundle) Option {
+	return func(cfg *testServerConfig) {
+		if cfg.apiBundles == nil {
+			cfg.apiBundles = []api.APIBundle{} // Ensure api is initialized to an empty slice if not provided
 		}
+		cfg.apiBundles = append(cfg.apiBundles, bundle)
+	}
+}
+
+// WithConfig allows the caller to pass in a custom configuration for the server from an existing configura.Config.
+func WithConfig(cfg configura.Config) Option {
+	return func(tsc *testServerConfig) {
+		tsc.serviceConfig = cfg
 	}
 }
 
 // CreateServer creates a new test server with the provided options. The options are very useful to pass in unique
 // configurations, custom mocks, or other settings.
-func CreateServer(opts ...Option) *httptest.Server {
+func CreateServer(opts ...Option) (*httptest.Server, error) {
+	r := chi.NewRouter()
+
 	// Init a default server configuration, then apply any options passed in.
-	cfg := &serverConfig{}
+	cfg := &testServerConfig{
+		captureLog:    nil,
+		serviceConfig: config.New(),
+		apiBundles:    nil,
+	}
 	for _, opt := range opts {
 		opt(cfg)
 	}
 
-	r := chi.NewRouter()
+	// If no bundles are provided, use the default API bundles.
+	if cfg.apiBundles == nil {
+		cfg.apiBundles = runtime.DefaultAPIBundles
+	}
 
 	// Hook up a middleware that captures the log output from the request, if provided through the options.
 	r.Use(func(next http.Handler) http.Handler {
@@ -67,8 +88,12 @@ func CreateServer(opts ...Option) *httptest.Server {
 		})
 	})
 
-	r.Mount("/", cfg.mux)
+	// Attach a new Huma API instance to the router, which will handle the API routes.
+	h := humachi.New(r, huma.DefaultConfig("Ponrove Backend API", "1.0.0"))
+
+	// If API packages are provided, register them with the Huma API instance.
+	api.RegisterAPIBundles(cfg.serviceConfig, h, cfg.apiBundles...)
 
 	// Start a test server with the application router
-	return httptest.NewServer(r)
+	return httptest.NewServer(r), nil
 }

@@ -5,8 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/open-feature/go-sdk/openfeature"
-	"github.com/ponrove/ponrove-backend/internal/pkg/configuration"
+	"github.com/ponrove/configura"
 	"github.com/ponrove/ponrove-backend/pkg/api/organisations"
 	"github.com/ponrove/ponrove-backend/test/testserver"
 	"github.com/stretchr/testify/suite"
@@ -14,13 +13,6 @@ import (
 
 type OrganisationsAPITestSuite struct {
 	suite.Suite
-	openfeatureClient *openfeature.Client
-}
-
-func (suite *OrganisationsAPITestSuite) SetupTest() {
-	// Initialize the OpenFeature client with a Noop provider for testing.
-	openfeature.SetProvider(openfeature.NoopProvider{})
-	suite.openfeatureClient = openfeature.NewClient("organisations-test-client")
 }
 
 // Bootstrap Test for foundational logic, this will become obsolete.
@@ -30,17 +22,16 @@ func (suite *OrganisationsAPITestSuite) TestRootEndpointFeatureFlagTrue() {
 		Message         string `json:"message"`
 		TestFeatureFlag bool   `json:"test_feature_flag"`
 	}
-
-	srv := testserver.CreateServer(
-		testserver.WithMux(func() http.Handler {
-			return organisations.NewAPIHandler(suite.openfeatureClient, configuration.ServerConfig{
-				OrganisationsApiTestFlag: true,
-			})
-		}),
+	cfg := configura.NewConfigImpl()
+	cfg.RegBool[organisations.ORGANISATIONS_API_TEST_FLAG] = true
+	srv, err := testserver.CreateServer(
+		testserver.WithConfig(cfg),
+		testserver.WithAPIBundle(organisations.Register),
 	)
+	suite.NoError(err)
 	defer srv.Close()
 
-	resp, err := http.Get(srv.URL)
+	resp, err := http.Get(srv.URL + "/api/organisations/")
 	suite.NoError(err)
 	defer resp.Body.Close()
 	suite.Equal(http.StatusOK, resp.StatusCode)
@@ -58,16 +49,16 @@ func (suite *OrganisationsAPITestSuite) TestRootEndpointFeatureFlagFalse() {
 		Message         string `json:"message"`
 		TestFeatureFlag bool   `json:"test_feature_flag"`
 	}
+	cfg := configura.NewConfigImpl()
+	cfg.RegBool[organisations.ORGANISATIONS_API_TEST_FLAG] = false
 
-	srv := testserver.CreateServer(
-		testserver.WithMux(func() http.Handler {
-			return organisations.NewAPIHandler(suite.openfeatureClient, configuration.ServerConfig{
-				OrganisationsApiTestFlag: false,
-			})
-		}),
+	srv, err := testserver.CreateServer(
+		testserver.WithConfig(cfg),
+		testserver.WithAPIBundle(organisations.Register),
 	)
+	suite.NoError(err)
 	defer srv.Close()
-	resp, err := http.Get(srv.URL)
+	resp, err := http.Get(srv.URL + "/api/organisations/")
 	suite.NoError(err)
 	defer resp.Body.Close()
 	suite.Equal(http.StatusOK, resp.StatusCode)
