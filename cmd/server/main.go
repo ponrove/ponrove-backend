@@ -6,18 +6,8 @@ import (
 	"github.com/ponrove/ponrove-backend/internal/client"
 	"github.com/ponrove/ponrove-backend/internal/config"
 	"github.com/ponrove/ponrove-backend/internal/runtime"
-	"github.com/ponrove/ponrove-backend/pkg/api"
-	"github.com/ponrove/ponrove-backend/pkg/api/ingestion"
-	"github.com/ponrove/ponrove-backend/pkg/api/organisations"
-	"github.com/ponrove/ponrove-backend/pkg/api/users"
 	"github.com/rs/zerolog/log"
 )
-
-var APIBundles = []api.APIBundle{
-	ingestion.Register,
-	organisations.Register,
-	users.Register,
-}
 
 func main() {
 	var err error
@@ -34,7 +24,7 @@ func main() {
 	ctx := log.Logger.WithContext(context.Background())
 
 	// Start the runtime with the provided configuration and API bundles.
-	err = runtime.Runtime(ctx, cfg, APIBundles...)
+	err = runtime.Runtime(ctx, cfg, runtime.DefaultAPIBundles...)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to start runtime")
 	}

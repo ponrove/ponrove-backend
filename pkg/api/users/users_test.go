@@ -26,7 +26,7 @@ func (suite *UsersAPITestSuite) TestRootEndpointFeatureFlagTrue() {
 	cfg.RegBool[users.USERS_API_TEST_FLAG] = true
 	srv, err := testserver.CreateServer(
 		testserver.WithConfig(cfg),
-		testserver.WithAPI(users.Register),
+		testserver.WithAPIBundle(users.Register),
 	)
 	suite.NoError(err)
 	defer srv.Close()
@@ -53,7 +53,7 @@ func (suite *UsersAPITestSuite) TestRootEndpointFeatureFlagFalse() {
 	cfg.RegBool[users.USERS_API_TEST_FLAG] = false
 	srv, err := testserver.CreateServer(
 		testserver.WithConfig(cfg),
-		testserver.WithAPI(users.Register),
+		testserver.WithAPIBundle(users.Register),
 	)
 	suite.NoError(err)
 	defer srv.Close()

@@ -26,7 +26,7 @@ func (suite *OrganisationsAPITestSuite) TestRootEndpointFeatureFlagTrue() {
 	cfg.RegBool[organisations.ORGANISATIONS_API_TEST_FLAG] = true
 	srv, err := testserver.CreateServer(
 		testserver.WithConfig(cfg),
-		testserver.WithAPI(organisations.Register),
+		testserver.WithAPIBundle(organisations.Register),
 	)
 	suite.NoError(err)
 	defer srv.Close()
@@ -54,7 +54,7 @@ func (suite *OrganisationsAPITestSuite) TestRootEndpointFeatureFlagFalse() {
 
 	srv, err := testserver.CreateServer(
 		testserver.WithConfig(cfg),
-		testserver.WithAPI(organisations.Register),
+		testserver.WithAPIBundle(organisations.Register),
 	)
 	suite.NoError(err)
 	defer srv.Close()

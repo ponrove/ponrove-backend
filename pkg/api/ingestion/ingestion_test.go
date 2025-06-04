@@ -28,7 +28,7 @@ func (suite *IngestionAPITestSuite) TestRootEndpointFeatureFlagTrue() {
 
 	srv, err := testserver.CreateServer(
 		testserver.WithConfig(cfg),
-		testserver.WithAPI(ingestion.Register),
+		testserver.WithAPIBundle(ingestion.Register),
 	)
 	suite.NoError(err)
 	defer srv.Close()
@@ -56,7 +56,7 @@ func (suite *IngestionAPITestSuite) TestRootEndpointFeatureFlagFalse() {
 
 	srv, err := testserver.CreateServer(
 		testserver.WithConfig(cfg),
-		testserver.WithAPI(ingestion.Register),
+		testserver.WithAPIBundle(ingestion.Register),
 	)
 	suite.NoError(err)
 	defer srv.Close()
