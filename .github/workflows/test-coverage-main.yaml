@@ -18,9 +18,15 @@ jobs:
           go-version-file: go.mod
       - name: Install dependencies
         run: go mod vendor
-      - name: Build
-        id: build
+      - name: Build Server
+        id: build-server
         run: go build -v -a -installsuffix cgo -o runtime_binary ./cmd/server
+      - name: Build Ingestion API
+        id: build-ingestion
+        run: go build -v -a -installsuffix cgo -o runtime_binary ./cmd/ingestion
+      - name: Build Hub API
+        id: build-hub
+        run: go build -v -a -installsuffix cgo -o runtime_binary ./cmd/hub
       - name: Test with the Go CLI
         id: test
         run: go test -coverprofile=unit.coverage.out ./...

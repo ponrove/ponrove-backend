@@ -16,9 +16,15 @@ jobs:
           go-version-file: go.mod
       - name: Install dependencies
         run: go mod vendor
-      - name: Build
-        id: build
+      - name: Build Server
+        id: build-server
         run: go build -v -a -installsuffix cgo -o runtime_binary ./cmd/server
+      - name: Build Ingestion API
+        id: build-ingestion
+        run: go build -v -a -installsuffix cgo -o runtime_binary ./cmd/ingestion
+      - name: Build Hub API
+        id: build-hub
+        run: go build -v -a -installsuffix cgo -o runtime_binary ./cmd/hub
       - name: Test with the Go CLI
         if: always()
         id: test
@@ -57,13 +63,17 @@ jobs:
             // 2. Prepare format of the comment
             const output = `## Golang Build & Test status 🚀
 
-            #### Go Build Outcome 🔨\`${{ steps.build.outcome }}\`
+            #### Go Build Backend API Outcome 🔨\`${{ steps.build-server.outcome }}\`
+
+            #### Go Build Ingestion API Outcome 🔨\`${{ steps.build-ingestion.outcome }}\`
+
+            #### Go Build Hub API Outcome 🔨\`${{ steps.build-hub.outcome }}\`
 
             #### Go Test Outcome 🧪\`${{ steps.test.outcome }}\`
 
             #### Coverage Report 📊\`${{ steps.coverage.outcome }}\`
 
-            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
 
             // 3. If we have a comment, update it, otherwise create a new one
             if (botComment) {
