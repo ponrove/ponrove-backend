@@ -13,14 +13,12 @@ jobs:
         uses: actions/checkout@85e6279cec87321a52edac9c87bce653a07cf6c2
         with:
           repository: ${{ github.repository_owner }}/ponrove
-          token: ${{ secrets.PR_CREATION_TOKEN_PONROVE }}
+      #          token: ${{ secrets.PR_CREATION_TOKEN_PONROVE }}
 
       - name: Setup Go
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5
         with:
           go-version-file: go.mod
-      - name: Install dependencies
-        run: go mod vendor
       - name: Update
         id: update
         run: go get -u github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}
@@ -31,11 +29,11 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@0f2a09222f84e1d0d078fdec150cbe3ff4c5b799
         with:
-          token: ${{ secrets.PR_CREATION_TOKEN_PONROVE }}
-          title: "Release ${{ github.event.release.tag_name }}"
-          body: "Release of version ${{ github.event.release.tag_name }} on Ponrove Backend"
+          #          token: ${{ secrets.PR_CREATION_TOKEN_PONROVE }}
+          title: "Release ${{ github.repository }} ${{ github.event.release.tag_name }}"
+          body: "Release of version ${{ github.event.release.tag_name }} on ${{ github.repository }}"
           branch: "upgrade/backend/release-${{ github.event.release.tag_name }}"
-          commit-message: "Upgrade to version ${{ github.event.release.tag_name }} of ponrove-backend"
+          commit-message: "Upgrade to version ${{ github.event.release.tag_name }} of ${{ github.repository }}"
           base: "main"
           draft: false
           sign-commits: true
