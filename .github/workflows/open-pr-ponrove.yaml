@@ -7,7 +7,9 @@ on:
 jobs:
   create-pull-request:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@85e6279cec87321a52edac9c87bce653a07cf6c2
