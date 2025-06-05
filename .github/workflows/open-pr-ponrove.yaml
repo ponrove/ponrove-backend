@@ -24,8 +24,8 @@ jobs:
       - name: Update
         id: update
         run: go get -u github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}
-      - name: Update
-        id: update
+      - name: Tidy packages
+        id: tidy packages
         run: go mod tidy
 
       - name: Create Pull Request
