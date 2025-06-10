@@ -113,9 +113,9 @@ jobs:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: |
             type=edge,branch=main
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}.{{minor}}.{{patch}}
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}.{{minor}}.{{patch}}
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
