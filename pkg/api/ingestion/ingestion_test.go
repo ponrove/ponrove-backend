@@ -24,7 +24,10 @@ func (suite *IngestionAPITestSuite) TestRootEndpointFeatureFlagTrue() {
 	}
 
 	cfg := configura.NewConfigImpl()
-	cfg.RegBool[ingestion.INGESTION_API_TEST_FLAG] = true
+	err := configura.WriteConfiguration(cfg, map[configura.Variable[bool]]bool{
+		ingestion.INGESTION_API_TEST_FLAG: true,
+	})
+	suite.NoError(err)
 
 	srv, err := testserver.CreateServer(
 		testserver.WithConfig(cfg),
@@ -52,7 +55,10 @@ func (suite *IngestionAPITestSuite) TestRootEndpointFeatureFlagFalse() {
 		TestFeatureFlag bool   `json:"test_feature_flag"`
 	}
 	cfg := configura.NewConfigImpl()
-	cfg.RegBool[ingestion.INGESTION_API_TEST_FLAG] = false
+	err := configura.WriteConfiguration(cfg, map[configura.Variable[bool]]bool{
+		ingestion.INGESTION_API_TEST_FLAG: false,
+	})
+	suite.NoError(err)
 
 	srv, err := testserver.CreateServer(
 		testserver.WithConfig(cfg),

@@ -30,5 +30,5 @@ func New() configura.Config {
 		configura.LoadEnvironment(serverConfigInstance, hub.HUB_API_TEST_FLAG, false)
 	}
 
-	return *serverConfigInstance
+	return serverConfigInstance
 }
