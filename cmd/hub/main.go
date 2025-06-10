@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/go-chi/chi/v5"
+	"github.com/ponrove/configura"
 	"github.com/ponrove/ponrove-backend/pkg/api/hub"
 	"github.com/ponrove/ponrove-backend/pkg/config"
 	"github.com/ponrove/ponrunner"
@@ -20,7 +22,14 @@ func main() {
 	router := chi.NewRouter()
 
 	// Start the runtime with the provided configuration and API bundles.
-	err = ponrunner.Start(ctx, cfg, router, hub.Register)
+	err = ponrunner.Start(ctx, cfg, router, func(c configura.Config, r chi.Router, a huma.API) error {
+		err := ponrunner.RegisterAPIBundles(c, a, hub.Register)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to start runtime")
 	}

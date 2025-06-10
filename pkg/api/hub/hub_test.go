@@ -23,7 +23,11 @@ func (suite *HubAPITestSuite) TestRootEndpointFeatureFlagTrue() {
 		TestFeatureFlag bool   `json:"test_feature_flag"`
 	}
 	cfg := configura.NewConfigImpl()
-	cfg.RegBool[hub.HUB_API_TEST_FLAG] = true
+	err := configura.WriteConfiguration(cfg, map[configura.Variable[bool]]bool{
+		hub.HUB_API_TEST_FLAG: true,
+	})
+	suite.NoError(err)
+
 	srv, err := testserver.CreateServer(
 		testserver.WithConfig(cfg),
 		testserver.WithAPIBundle(hub.Register),
@@ -50,7 +54,10 @@ func (suite *HubAPITestSuite) TestRootEndpointFeatureFlagFalse() {
 		TestFeatureFlag bool   `json:"test_feature_flag"`
 	}
 	cfg := configura.NewConfigImpl()
-	cfg.RegBool[hub.HUB_API_TEST_FLAG] = false
+	err := configura.WriteConfiguration(cfg, map[configura.Variable[bool]]bool{
+		hub.HUB_API_TEST_FLAG: false,
+	})
+	suite.NoError(err)
 
 	srv, err := testserver.CreateServer(
 		testserver.WithConfig(cfg),
