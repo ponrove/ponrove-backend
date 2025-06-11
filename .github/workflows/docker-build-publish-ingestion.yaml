@@ -116,7 +116,7 @@ jobs:
             suffix=-ingestion
           tags: |
             type=edge,branch=main
-            type=edge,branch=main,suffix=-{{commit_date 'YYYYMMDD-HHmmss' tz='Europe/Stockholm'}}
+            type=edge,branch=main,suffix=-{{commit_date 'YYYYMMDD-HHmmss' tz='Europe/Stockholm'}}-ingestion
             type=semver,pattern={{version}},prefix=v
             type=semver,pattern={{major}}.{{minor}},prefix=v
             type=semver,pattern={{major}},prefix=v
