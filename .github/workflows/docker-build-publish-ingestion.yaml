@@ -115,8 +115,8 @@ jobs:
             latest=auto
             suffix=-ingestion
           tags: |
-            type=edge,branch=$repo.default_branch
-            type=edge,branch=$repo.default_branch,pattern={{commit_date 'YYYYMMDD-HHmmss' tz='Europe/Stockholm'}},prefix=edge-
+            type=edge,branch=main
+            type=edge,branch=main,pattern={{commit_date 'YYYYMMDD-HHmmss' tz='Europe/Stockholm'}},prefix=edge-
             type=semver,pattern={{version}},prefix=v
             type=semver,pattern={{major}}.{{minor}},prefix=v
             type=semver,pattern={{major}},prefix=v
