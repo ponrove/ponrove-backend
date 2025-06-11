@@ -111,11 +111,15 @@ jobs:
         uses: docker/metadata-action@418e4b98bf2841bd337d0b24fe63cb36dc8afa55
         with:
           images: ${{ env.REGISTRY_IMAGE }}
+          flavor: |
+            latest=auto
           tags: |
-            type=edge,branch=main
-            type=semver,pattern=v{{version}}
-            type=semver,pattern=v{{major}}.{{minor}}
-            type=semver,pattern=v{{major}}.{{minor}}.{{patch}}
+            type=raw,value=latest,enable=${{ contains('refs/tags/') }}
+            type=edge,branch=$repo.default_branch
+            type=edge,branch=$repo.default_branch,pattern={{commit_date 'YYYYMMDD-HHmmss' tz='Europe/Stockholm'}},prefix=edge-
+            type=semver,pattern={{version}},prefix=v
+            type=semver,pattern={{major}}.{{minor}},prefix=v
+            type=semver,pattern={{major}},prefix=v
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
