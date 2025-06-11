@@ -115,7 +115,6 @@ jobs:
             latest=auto
             suffix=-hub
           tags: |
-            type=raw,value=latest,enable=${{ contains('refs/tags/') }}
             type=edge,branch=$repo.default_branch
             type=edge,branch=$repo.default_branch,pattern={{commit_date 'YYYYMMDD-HHmmss' tz='Europe/Stockholm'}},prefix=edge-
             type=semver,pattern={{version}},prefix=v
