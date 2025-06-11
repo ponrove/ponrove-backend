@@ -30,7 +30,7 @@ jobs:
           go-version-file: go.mod
       - name: Update
         id: update
-        run: go get -u github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}
+        run: go get -u github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}@${{ github.event.release.tag_name }}
       - name: Tidy packages
         id: tidy-packages
         run: go mod tidy
