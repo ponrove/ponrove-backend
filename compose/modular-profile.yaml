@@ -1,6 +1,6 @@
 include:
   - openfeature-service.yaml
-
+  - clickhouse.yaml
 services:
   backend-ingestion:
     build:
@@ -12,9 +12,11 @@ services:
     ports:
       - 8080:8080
     depends_on:
-      - openfeature-server
+      clickhouse:
+        condition: service_healthy
     links:
       - openfeature-server
+      - clickhouse
     profiles:
       - modular
   backend-hub:
@@ -27,8 +29,10 @@ services:
     ports:
       - 8081:8080
     depends_on:
-      - openfeature-server
+      clickhouse:
+        condition: service_healthy
     links:
       - openfeature-server
+      - clickhouse
     profiles:
       - modular

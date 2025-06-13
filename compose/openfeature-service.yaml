@@ -3,3 +3,5 @@ services:
     image: gofeatureflag/go-feature-flag:latest
     volumes:
       - ../configs:/goff
+    ports:
+      - 1031:1031
