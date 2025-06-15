@@ -6,9 +6,10 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.36.0
 	github.com/danielgtaylor/huma/v2 v2.32.0
 	github.com/go-chi/chi/v5 v5.2.1
+	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/open-feature/go-sdk v1.15.0
 	github.com/ponrove/configura v1.0.0-rc.4
-	github.com/ponrove/octobe v1.0.0-rc.2
+	github.com/ponrove/octobe v1.0.0-rc.3
 	github.com/ponrove/ponrunner v1.0.0-rc.7
 	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.10.0
@@ -27,6 +28,12 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3 // indirect
+	github.com/hashicorp/errwrap v1.1.0 // indirect
+	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
+	github.com/jackc/pgx/v5 v5.7.5 // indirect
+	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -59,8 +66,11 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.36.0 // indirect
 	go.opentelemetry.io/otel/trace v1.36.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.0 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/mock v0.5.2 // indirect
+	golang.org/x/crypto v0.39.0 // indirect
 	golang.org/x/net v0.41.0 // indirect
+	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822 // indirect

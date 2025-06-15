@@ -5,3 +5,7 @@ services:
       - ../configs:/goff
     ports:
       - 1031:1031
+    profiles:
+      - modular
+      - full
+      - integration

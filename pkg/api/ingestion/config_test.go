@@ -17,11 +17,16 @@ func TestRequiredConfiguration(t *testing.T) {
 	t.Parallel()
 
 	cfg := config.New()
-	err := ingestion.Register(cfg, humachi.New(chi.NewRouter(), huma.DefaultConfig("", "")))
+	_, driver := setupDB(t)
+	err := ingestion.Register(
+		ingestion.WithClickhouseDriver(driver),
+	)(cfg, humachi.New(chi.NewRouter(), huma.DefaultConfig("", "")))
 	assert.NoError(t, err, "failed to register users API")
 
 	cleanCfg := configura.NewConfigImpl()
-	err = ingestion.Register(cleanCfg, humachi.New(chi.NewRouter(), huma.DefaultConfig("", "")))
+	err = ingestion.Register(
+		ingestion.WithClickhouseDriver(driver),
+	)(cleanCfg, humachi.New(chi.NewRouter(), huma.DefaultConfig("", "")))
 	assert.Error(t, err, "expected error when registering users API with empty configuration")
 	assert.ErrorIs(t, err, configura.ErrMissingVariable)
 }
