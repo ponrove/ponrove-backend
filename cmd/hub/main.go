@@ -23,7 +23,7 @@ func main() {
 
 	// Start the runtime with the provided configuration and API bundles.
 	err = ponrunner.Start(ctx, cfg, router, func(c configura.Config, r chi.Router, a huma.API) error {
-		err := ponrunner.RegisterAPIBundles(c, a, hub.Register)
+		err := ponrunner.RegisterAPIBundles(c, a, hub.Register())
 		if err != nil {
 			return err
 		}

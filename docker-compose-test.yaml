@@ -1,0 +1,35 @@
+include:
+  - ./compose/openfeature-service.yaml
+  - ./compose/clickhouse.yaml
+services:
+  # TODO: Fix the tests to work properly with clickhouse
+  integration-test:
+    image: golang:1.24.3
+    volumes:
+      - ./:/workspace
+    working_dir: /workspace
+    extends:
+      file: ./compose/extend-backend-env.yaml
+      service: backend-environment
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      openfeature-server:
+        condition: service_started
+    links:
+      - clickhouse
+      - openfeature-server
+    profiles:
+      - integration
+    command: >
+      sh -c "go test -v -count=1 -tags=integration -coverprofile=integration.coverage.out ./..."
+
+  unit-test:
+    image: golang:1.24.3
+    volumes:
+      - ./:/workspace
+    working_dir: /workspace
+    command: >
+      sh -c "go test -v -count=1 -tags=unit -coverprofile=unit.coverage.out ./..."
+    profiles:
+      - unit
