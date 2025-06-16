@@ -18,6 +18,7 @@ jobs:
           go-version-file: go.mod
       - name: Install dependencies
         run: go mod vendor
+
       - name: Build Server
         id: build-server
         run: go build -v -a -installsuffix cgo -o runtime_binary ./cmd/server
@@ -27,11 +28,21 @@ jobs:
       - name: Build Hub API
         id: build-hub
         run: go build -v -a -installsuffix cgo -o runtime_binary ./cmd/hub
-      - name: Test with the Go CLI
-        id: test
-        run: go test -coverprofile=unit.coverage.out ./...
-      - name: Upload coverage report
-        id: coverage
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@3f1544eb9eff0b4d4d279b33f704a06fcf8d0e43
+
+      - name: Set up Docker Compose
+        id: setup-compose
+        uses: docker/setup-compose-action@8d504d704c1efdb471247e2126b8d3672c944f8c
+
+      - name: Run tests
+        run: |
+          docker compose -f docker-compose-test.yaml --profile integration --profile unit up --abort-on-container-exit --force-recreate --always-recreate-deps
+
+      - name: Upload integration coverage report
+        if: always()
+        id: coverage-backend
         env:
           CODACY_API_TOKEN: ${{ secrets.CODACY_API_TOKEN }}
           CODACY_ORGANIZATION_PROVIDER: gh
@@ -39,4 +50,26 @@ jobs:
           CODACY_PROJECT_NAME: ${{ github.event.repository.name }}
         run: |
           bash <(curl -Ls https://coverage.codacy.com/get.sh) report \
-              --force-coverage-parser go -r unit.coverage.out
+              --partial --force-coverage-parser go -r integration.coverage.out
+      - name: Upload integration coverage report
+        if: always()
+        id: coverage-backend
+        env:
+          CODACY_API_TOKEN: ${{ secrets.CODACY_API_TOKEN }}
+          CODACY_ORGANIZATION_PROVIDER: gh
+          CODACY_USERNAME: ${{ github.repository_owner }}
+          CODACY_PROJECT_NAME: ${{ github.event.repository.name }}
+        run: |
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) report \
+              --partial --force-coverage-parser go -r unit.coverage.out
+
+      - name: Finish coverage report
+        if: always()
+        id: coverage-final
+        env:
+          CODACY_API_TOKEN: ${{ secrets.CODACY_API_TOKEN }}
+          CODACY_ORGANIZATION_PROVIDER: gh
+          CODACY_USERNAME: ${{ github.repository_owner }}
+          CODACY_PROJECT_NAME: ${{ github.event.repository.name }}
+        run: |
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) final
