@@ -7,6 +7,6 @@ import (
 )
 
 var DefaultAPIBundles = []ponrunner.APIBundle{
-	ingestion.Register,
-	hub.Register,
+	ingestion.Register(),
+	hub.Register(),
 }

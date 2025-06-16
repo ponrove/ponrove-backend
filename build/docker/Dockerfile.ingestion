@@ -13,6 +13,7 @@ ARG COMMIT_SHA
 ENV COMMIT_SHA="${COMMIT_SHA:-No COMMIT_SHA}"
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY ./internal/database/clickhouse/migrations ./internal/database/clickhouse/migrations
 COPY --from=builder /workspace/runtime_binary ./
 EXPOSE 8080
 ENTRYPOINT ["./runtime_binary"]
