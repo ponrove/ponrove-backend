@@ -1,15 +1,17 @@
-package clickhouse
+package database
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
 	"net"
+	"sync"
 
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/golang-migrate/migrate/v4"
 	migratedb "github.com/golang-migrate/migrate/v4/database/clickhouse"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/pkg/errors"
 	"github.com/ponrove/configura"
 	"github.com/ponrove/octobe"
 	"github.com/ponrove/octobe/driver/clickhouse"
@@ -67,27 +69,49 @@ func (c *ClickHouse) SQLConn() postgres.SQL {
 	return c.sqlConn
 }
 
+// migrationLock is a mutex to ensure that migrations are run only once at a time.
+var (
+	migrationOnce sync.Once
+	migrationErr  error
+	migrationLock sync.Mutex
+)
+
 // Migrate runs database migrations on the ClickHouse database.
 func (c *ClickHouse) Migrate(migrationsURL string) error {
-	driver, err := migratedb.WithInstance(c.sqlConn, &migratedb.Config{})
-	if err != nil {
-		return fmt.Errorf("failed to create migrate driver: %w", err)
-	}
-	m, err := migrate.NewWithDatabaseInstance(
-		migrationsURL,
-		"clickhouse",
-		driver,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create migrate instance: %w", err)
-	}
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("failed to run migrations: %w", err)
-	}
-	return nil
+	migrationLock.Lock()
+	defer migrationLock.Unlock()
+
+	migrationOnce.Do(func() {
+		driver, err := migratedb.WithInstance(c.sqlConn, &migratedb.Config{
+			MultiStatementEnabled: true,
+		})
+		if err != nil {
+			migrationErr = fmt.Errorf("failed to create migrate driver: %w", err)
+			return
+		}
+		m, err := migrate.NewWithDatabaseInstance(
+			migrationsURL,
+			"clickhouse",
+			driver,
+		)
+		if err != nil {
+			migrationErr = fmt.Errorf("failed to create migrate instance: %w", err)
+			return
+		}
+		err = m.Up()
+		if errors.Is(err, migrate.ErrNoChange) {
+			migrationErr = nil // No changes to apply, this is not an error
+			return
+		}
+		if err != nil {
+			migrationErr = fmt.Errorf("failed to run migrations: %w", err)
+		}
+	})
+
+	return migrationErr
 }
 
-func New(cfg configura.Config) (*ClickHouse, error) {
+func NewClickhouse(cfg configura.Config) (*ClickHouse, error) {
 	opts, err := ch.ParseDSN(cfg.String(CLICKHOUSE_DSN))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse ClickHouse DSN: %w", err)

@@ -7,8 +7,8 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/open-feature/go-sdk/openfeature"
 	"github.com/ponrove/configura"
-	ch "github.com/ponrove/octobe/driver/clickhouse"
-	"github.com/ponrove/ponrove-backend/internal/database/clickhouse"
+	"github.com/ponrove/octobe/driver/clickhouse"
+	"github.com/ponrove/ponrove-backend/internal/database"
 	"github.com/ponrove/ponrunner"
 )
 
@@ -19,19 +19,19 @@ const (
 type server struct {
 	openfeatureClient *openfeature.Client
 	config            configura.Config
-	clickhouse        ch.Driver
+	clickhouse        clickhouse.Driver
 }
 
 // ingestionAPIConfig holds the configuration for the Ingestion API.
 type hubAPIConfig struct {
-	clickhouseDriver ch.Driver
+	clickhouseDriver clickhouse.Driver
 }
 
 // Option is a function that modifies the api configuration.
 type Option func(*hubAPIConfig)
 
 // WithClickhouseDriver allows setting a custom Clickhouse driver for the ingestion API.
-func WithClickhouseDriver(driver ch.Driver) Option {
+func WithClickhouseDriver(driver clickhouse.Driver) Option {
 	return func(cfg *hubAPIConfig) {
 		cfg.clickhouseDriver = driver
 	}
@@ -54,7 +54,7 @@ func Register(opts ...Option) ponrunner.APIBundle {
 		}
 
 		if apiConfig.clickhouseDriver == nil {
-			clickhouseDriver, err := clickhouse.New(cfg)
+			clickhouseDriver, err := database.NewClickhouse(cfg)
 			if err != nil {
 				return err
 			}

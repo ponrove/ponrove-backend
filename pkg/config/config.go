@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/ponrove/configura"
-	"github.com/ponrove/ponrove-backend/internal/database/clickhouse"
+	"github.com/ponrove/ponrove-backend/internal/database"
 	"github.com/ponrove/ponrove-backend/pkg/api/hub"
 	"github.com/ponrove/ponrove-backend/pkg/api/ingestion"
 	"github.com/ponrove/ponrunner"
@@ -33,7 +33,7 @@ func New() configura.Config {
 		configura.LoadEnvironment(serverConfigInstance, ponrunner.SERVER_LOG_LEVEL, "info")
 		configura.LoadEnvironment(serverConfigInstance, ponrunner.SERVER_LOG_FORMAT, "json")
 		/* Clickhouse */
-		configura.LoadEnvironment(serverConfigInstance, clickhouse.CLICKHOUSE_DSN, "")
+		configura.LoadEnvironment(serverConfigInstance, database.CLICKHOUSE_DSN, "")
 		/* Open Telemetry */
 		configura.LoadEnvironment(serverConfigInstance, ponrunner.OTEL_ENABLED, false)
 		configura.LoadEnvironment(serverConfigInstance, ponrunner.OTEL_LOGS_ENABLED, false)
