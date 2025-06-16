@@ -40,7 +40,7 @@ jobs:
 
       - name: Upload integration coverage report
         if: always()
-        id: coverage-backend
+        id: coverage-integration
         env:
           CODACY_API_TOKEN: ${{ secrets.CODACY_API_TOKEN }}
           CODACY_ORGANIZATION_PROVIDER: gh
@@ -49,9 +49,9 @@ jobs:
         run: |
           bash <(curl -Ls https://coverage.codacy.com/get.sh) report \
               --partial --force-coverage-parser go -r integration.coverage.out
-      - name: Upload integration coverage report
+      - name: Upload unit coverage report
         if: always()
-        id: coverage-backend
+        id: coverage-unit
         env:
           CODACY_API_TOKEN: ${{ secrets.CODACY_API_TOKEN }}
           CODACY_ORGANIZATION_PROVIDER: gh
