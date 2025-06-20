@@ -5,7 +5,7 @@ go 1.24.3
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.36.0
 	github.com/danielgtaylor/huma/v2 v2.32.0
-	github.com/go-chi/chi/v5 v5.2.1
+	github.com/go-chi/chi/v5 v5.2.2
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/open-feature/go-sdk v1.15.0
 	github.com/pkg/errors v0.9.1
